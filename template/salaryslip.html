@@ -1,0 +1,342 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        color: #333;
+      }
+
+      .company-header {
+        font-size: 20px;
+        font-weight: 800;
+        color: #2596be;
+      }
+
+      .company-address {
+        font-size: 14px;
+        margin-bottom: 20px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 30px;
+        border: 1px solid #ddd;
+        table-layout: fixed; /* ensures equal columns */
+      }
+
+      th,
+      td {
+        font-size: 14px;
+        border: 1px solid #ccc;
+        vertical-align: top;
+        width: 50%; /* force equal width columns */
+      }
+
+      .title-row {
+        text-align: center;
+        font-weight: bold;
+        font-size: 15px;
+        padding: 10px 0;
+      }
+
+      .right {
+        text-align: center;
+        font-size: 12px;
+      }
+
+      .netpay-number {
+        color: #00a040;
+        font-size: 26px;
+      }
+
+      .netpay-box {
+        text-align: center;
+        border: 2px dashed #00a85a;
+        margin-top: 25px;
+        font-size: 17px;
+        font-weight: bold;
+        padding: 10px;
+      }
+
+      .section-title {
+        font-weight: bold;
+        font-size: 15px;
+      }
+
+      .row {
+        display: flex;
+        margin-bottom: 4px;
+      }
+
+      .row .label {
+        width: 130px;
+        font-weight: bold;
+      }
+
+      .row .colon {
+        width: 20px;
+      }
+
+      .row .value {
+        flex: 1;
+      }
+
+      .note {
+        margin-top: 10px;
+        text-align: center;
+        font-size: 12px;
+        color: #777;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div
+      style="display: flex; justify-content: space-between; align-items: center"
+    >
+      <div>
+        <div class="company-header">GOA OCEANARIUM PRIVATE LIMITED</div>
+        <div class="company-address">
+          H. No. 78, Malbhat, Margao, South Goa, Goa 403601
+        </div>
+      </div>
+      <img src="data:image/png;base64,{{logoBase64}}" />
+    </div>
+
+    <table>
+      <tr>
+        <td colspan="2" class="title-row">
+          Payslip for the month of {{month}} {{year}}
+        </td>
+      </tr>
+
+      <tr>
+        <td style="padding: 15px">
+          <div class="section-title">EMPLOYEE SUMMARY</div>
+          <br />
+
+          <div class="row">
+            <div class="label">Employee Name</div>
+            <div class="colon">:</div>
+            <div class="value">{{employee_name}}</div>
+          </div>
+
+          <div class="row">
+            <div class="label">Employee ID</div>
+            <div class="colon">:</div>
+            <div class="value">{{employee_id}}</div>
+          </div>
+
+          <div class="row">
+            <div class="label">Designation</div>
+            <div class="colon">:</div>
+            <div class="value">{{designation}}</div>
+          </div>
+
+          <div class="row">
+            <div class="label">Pay Period</div>
+            <div class="colon">:</div>
+            <div class="value">{{month}} {{year}}</div>
+          </div>
+
+          <div class="row">
+            <div class="label">Pay Date</div>
+            <div class="colon">:</div>
+            <div class="value">{{pay_date}}</div>
+          </div>
+        </td>
+
+        <td class="right" style="padding: 15px">
+          <strong>Total Net Pay</strong><br /><br />
+          <span class="netpay-number">Rs. {{net_pay}}</span><br /><br />
+          Paid Days: {{paid_days}} | LOP Days: {{lop_days}}
+        </td>
+      </tr>
+
+      <tr>
+        <td colspan="2" style="padding: 10px">
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              gap: 12px;
+              font-size: 14px;
+            "
+          >
+            <!-- Row 1 -->
+            <div style="display: flex; width: 100%">
+              <div style="flex: 1; display: flex; gap: 6px">
+                <div class="label">PAN</div>
+                <div class="colon">:</div>
+                <div class="value">{{pan}}</div>
+              </div>
+
+              <div style="flex: 1; display: flex; gap: 6px; padding-left: 30px">
+                <div class="label">Bank</div>
+                <div class="colon">:</div>
+                <div class="value">{{bank}}</div>
+              </div>
+            </div>
+
+            <!-- Row 2 -->
+            <div style="display: flex; width: 100%">
+              <div style="flex: 1; display: flex; gap: 6px">
+                <div class="label">Bank A/C Number</div>
+                <div class="colon">:</div>
+                <div class="value">{{account_no}}</div>
+              </div>
+
+              <div style="flex: 1; display: flex; gap: 6px; padding-left: 30px">
+                <div class="label">Bank IFSC Number</div>
+                <div class="colon">:</div>
+                <div class="value">{{ifsc}}</div>
+              </div>
+            </div>
+          </div>
+        </td>
+      </tr>
+
+      <tr style="background-color: #cbcaca">
+        <th>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              padding: 0px 10px;
+            "
+          >
+            <p>EARNINGS</p>
+            <p>AMOUNT</p>
+          </div>
+        </th>
+
+        <th>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              padding: 0px 10px;
+            "
+          >
+            <p>DEDUCTIONS</p>
+            <p>AMOUNT</p>
+          </div>
+        </th>
+      </tr>
+
+      <tr>
+        <td>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              padding: 0px 10px;
+            "
+          >
+            <p>Basic</p>
+            <p>Rs. {{basic}}</p>
+          </div>
+
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              padding: 0px 10px;
+            "
+          >
+            <p>House Rent Allowance</p>
+            <p>Rs. {{hra}}</p>
+          </div>
+
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              padding: 0px 10px;
+            "
+          >
+            <p>Special Allowance</p>
+            <p>Rs. {{special_allowance}}</p>
+          </div>
+        </td>
+
+        <td>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              padding: 0px 10px;
+            "
+          >
+            <p>Income Tax</p>
+            <p>Rs. {{income_tax}}</p>
+          </div>
+
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              padding: 0px 10px;
+            "
+          >
+            <p>Provident Fund</p>
+            <p>Rs. {{pf}}</p>
+          </div>
+
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              padding: 0px 10px;
+            "
+          >
+            <p>Health & Education Cess</p>
+            <p>Rs. {{cess}}</p>
+          </div>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              padding: 0px 10px;
+            "
+          >
+            <p><b>Gross Earnings</b></p>
+            <p><b>Rs. {{gross_earnings}}</b></p>
+          </div>
+        </td>
+
+        <td>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              padding: 0px 10px;
+            "
+          >
+            <p><b>Total Deductions</b></p>
+            <p><b>Rs. {{total_deductions}}</b></p>
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <div class="netpay-box">
+      <p>Total Net Payable Rs. {{net_pay}} ({{net_pay_words}})</p>
+      <p style="font-size: 12px; font-weight: 100">
+        **Total Net Payable = Gross Earnings - Total Deductions
+      </p>
+    </div>
+
+    <div class="note">--This is a system-generated document.--</div>
+  </body>
+</html>

@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Employee {
+  id             String       @id @unique @default(cuid())
+  name           String
+  email          String       @unique
+  designation    String
+  email_verified Boolean      @default(false)
+  phone_num      String
+  bank           String
+  bank_acc_num   String
+  bank_ifsc      String
+  pan_num        String
+  created_at     DateTime     @default(now())
+  updated_at     DateTime     @default(now())
+  payslips       PayslipLog[]
+}
+
+model Admin {
+  id         String   @id @default(cuid())
+  name       String
+  password   String
+  email      String   @unique
+  created_at DateTime @default(now())
+}
+
+model PayslipLog {
+  id         String      @id @default(cuid())
+  employeeId String
+  employee   Employee    @relation(fields: [employeeId], references: [id])
+  month      Int
+  year       Int
+  status     EmailStatus @default(PENDING)
+  messageId  String?
+  createdAt  DateTime    @default(now())
+}
+
+enum EmailStatus {
+  PENDING
+  SENT
+  FAILED
+}
