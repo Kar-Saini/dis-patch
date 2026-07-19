@@ -2,16 +2,13 @@
 
 import transporter from "@/mailer";
 import { Employee, EmailStatus } from "@prisma/client";
-import fs from "fs";
-import path from "path";
-import puppeteer, { Browser } from "puppeteer-core";
+import { renderToBuffer } from "@react-pdf/renderer";
 
 import { SALARY_CONSTANTS } from "./salaryConstants";
 import getEmployeeByEmail from "./getEmployeeByEmail";
 import prisma from "@/utils";
 import { SALARY_SLIP_DATA_TYPE } from "@/lib/types";
-
-import chromium from "@sparticuz/chromium";
+import SalarySlipDocument from "@/components/SalarySlipDocument";
 
 export async function sendSalaryEmail({
   employeeEmails,
@@ -22,12 +19,6 @@ export async function sendSalaryEmail({
   monthAndYear: { month: string; year: string };
   subject: string;
 }) {
-  const browser = await puppeteer.launch({
-    args: [...chromium.args, "--no-sandbox", "--disable-setuid-sandbox"],
-    executablePath: await chromium.executablePath(),
-    headless: true,
-  });
-
   const logs: {
     employeeId: string;
     month: number;
@@ -43,68 +34,67 @@ export async function sendSalaryEmail({
 
   const year = Number(monthAndYear.year);
 
-  try {
-    for (const email of employeeEmails) {
-      try {
-        const employee = await getEmployeeByEmail(email);
+  for (const email of employeeEmails) {
+    try {
+      const employee = await getEmployeeByEmail(email);
 
-        if (!employee) continue;
+      if (!employee) continue;
 
-        const slipData = getSalarySlipData(employee as Employee, monthAndYear);
+      const slipData = getSalarySlipData(employee as Employee, monthAndYear);
 
-        const pdfBuffer = await generateSalarySlipPDF(slipData, browser);
+      // No browser, no Chromium — pure JS PDF generation
+      const pdfBuffer = await renderToBuffer(
+        SalarySlipDocument({ data: slipData }) as any,
+      );
 
-        const info = await sendEmailWithAttachment({
-          employee: employee as Employee,
-          monthAndYear,
-          subject,
-          pdfBuffer,
-        });
+      const info = await sendEmailWithAttachment({
+        employee: employee as Employee,
+        monthAndYear,
+        subject,
+        pdfBuffer: Buffer.from(pdfBuffer),
+      });
 
-        results.push({
-          email,
-          messageId: info.messageId,
-        });
+      results.push({
+        email,
+        messageId: info.messageId,
+      });
 
+      logs.push({
+        employeeId: employee.id,
+        month,
+        year,
+        status: "SENT",
+        messageId: info.messageId,
+      });
+    } catch (err) {
+      console.error(`Failed to send email to ${email}`, err);
+
+      const employee = await getEmployeeByEmail(email);
+
+      if (employee) {
         logs.push({
           employeeId: employee.id,
           month,
           year,
-          status: "SENT",
-          messageId: info.messageId,
+          status: "FAILED",
+          messageId: "",
         });
-      } catch (err) {
-        console.error(`Failed to send email to ${email}`, err);
-
-        const employee = await getEmployeeByEmail(email);
-
-        if (employee) {
-          logs.push({
-            employeeId: employee.id,
-            month,
-            year,
-            status: "FAILED",
-            messageId: "",
-          });
-        }
       }
     }
-
-    if (logs.length > 0) {
-      await prisma.payslipLog.createMany({
-        data: logs,
-      });
-    }
-
-    return {
-      success: true,
-      totalSent: logs.filter((l) => l.status === "SENT").length,
-      totalFailed: logs.filter((l) => l.status === "FAILED").length,
-      results,
-    };
-  } finally {
-    await browser.close();
   }
+
+  if (logs.length > 0) {
+    await prisma.payslipLog.createMany({
+      data: logs,
+    });
+  }
+
+  return {
+    success: true,
+    totalSent: logs.filter((l) => l.status === "SENT").length,
+    totalFailed: logs.filter((l) => l.status === "FAILED").length,
+    results,
+  };
 }
 
 /* ---------------------------------------------------
@@ -131,50 +121,6 @@ function getSalarySlipData(
 
     ...SALARY_CONSTANTS,
   };
-}
-
-/* ---------------------------------------------------
-   GENERATE PDF
---------------------------------------------------- */
-
-async function generateSalarySlipPDF(
-  data: SALARY_SLIP_DATA_TYPE,
-  browser: Browser,
-): Promise<Buffer> {
-  const html = loadHTMLTemplate("salaryslip.html", data);
-
-  const page = await browser.newPage();
-
-  await page.setContent(html, {
-    waitUntil: "domcontentloaded",
-  });
-
-  const pdfBuffer = await page.pdf({
-    format: "A4",
-  });
-
-  await page.close();
-
-  return Buffer.from(pdfBuffer);
-}
-
-/* ---------------------------------------------------
-   LOAD TEMPLATE
---------------------------------------------------- */
-
-function loadHTMLTemplate(
-  templateName: string,
-  data: SALARY_SLIP_DATA_TYPE,
-): string {
-  const filePath = path.join(process.cwd(), "template", templateName);
-
-  let html = fs.readFileSync(filePath, "utf8");
-
-  for (const [key, value] of Object.entries(data)) {
-    html = html.replace(new RegExp(`{{${key}}}`, "g"), String(value));
-  }
-
-  return html;
 }
 
 /* ---------------------------------------------------
