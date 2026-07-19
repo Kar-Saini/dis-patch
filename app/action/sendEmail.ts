@@ -4,12 +4,14 @@ import transporter from "@/mailer";
 import { Employee, EmailStatus } from "@prisma/client";
 import fs from "fs";
 import path from "path";
-import puppeteer, { Browser } from "puppeteer";
+import puppeteer, { Browser } from "puppeteer-core";
 
 import { SALARY_CONSTANTS } from "./salaryConstants";
 import getEmployeeByEmail from "./getEmployeeByEmail";
 import prisma from "@/utils";
 import { SALARY_SLIP_DATA_TYPE } from "@/lib/types";
+
+import chromium from "@sparticuz/chromium";
 
 export async function sendSalaryEmail({
   employeeEmails,
@@ -21,8 +23,9 @@ export async function sendSalaryEmail({
   subject: string;
 }) {
   const browser = await puppeteer.launch({
-    headless: "shell",
-    args: ["--no-sandbox"],
+    args: [...chromium.args, "--no-sandbox", "--disable-setuid-sandbox"],
+    executablePath: await chromium.executablePath(),
+    headless: true,
   });
 
   const logs: {
