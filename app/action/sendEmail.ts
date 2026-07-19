@@ -1,4 +1,5 @@
 "use server";
+
 import transporter from "@/mailer";
 import { Employee, EmailStatus } from "@prisma/client";
 import fs from "fs";
@@ -21,13 +22,9 @@ export async function sendSalaryEmail({
   monthAndYear: { month: string; year: string };
   subject: string;
 }) {
-  const executablePath = await chromium.executablePath();
-
-  console.log("Executable:", executablePath);
-
   const browser = await puppeteer.launch({
-    executablePath,
     args: [...chromium.args, "--no-sandbox", "--disable-setuid-sandbox"],
+    executablePath: await chromium.executablePath(),
     headless: true,
   });
 
