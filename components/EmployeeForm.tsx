@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ChangeEvent, type FormEvent } from "react";
+import type { InputHTMLAttributes } from "react";
 import { X } from "lucide-react";
 import addEmployee from "@/app/action/addEmployee";
 
@@ -10,141 +11,290 @@ interface EmployeeFormProps {
 }
 
 const initialForm = {
+  // Employee Information
   name: "",
-  email: "",
+  employee_id: "",
   designation: "",
+  date_of_joining: "",
+  email: "",
   phone_num: "",
-  bank: "",
-  bank_acc_num: "",
-  bank_ifsc: "",
+
+  // Personal and identification details
+  passport_no: "",
+  date_of_birth: "",
+  nationality: "",
+  visa_no: "",
+  frro_reg_no: "",
+  tax_residency_status: "",
+  iw_ssa_status: "",
+
+  // Bank Details
   pan_num: "",
+  bank_acc_num: "",
+  bank: "",
+  bank_ifsc: "",
+  employer_tan: "",
 };
 
 export function EmployeeForm({ isOpen, onClose }: EmployeeFormProps) {
   const [formData, setFormData] = useState(initialForm);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    setError("");
+  };
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     setLoading(true);
+    setError("");
 
     try {
       await addEmployee(formData);
       setFormData(initialForm);
       onClose();
+    } catch (err) {
+      console.error("Failed to add employee:", err);
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to add employee. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
-  };
-
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="w-full max-w-xl rounded-xl border border-white/10 bg-zinc-900 shadow-2xl">
-        <div className="flex items-center justify-between border-b border-white/10 p-5">
-          <h2 className="text-lg font-semibold text-white">Add Employee</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+      <div className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-white/10 bg-zinc-900 shadow-2xl">
+        {/* Header */}
+        <div className="flex shrink-0 items-center justify-between border-b border-white/10 p-5">
+          <div>
+            <h2 className="text-lg font-semibold text-white">Add Employee</h2>
+            <p className="mt-1 text-sm text-gray-400">
+              Enter employee information and bank details.
+            </p>
+          </div>
 
           <button
+            type="button"
             onClick={onClose}
-            className="rounded-md p-2 text-gray-400 hover:bg-white/10 hover:text-white transition"
+            aria-label="Close form"
+            className="rounded-md p-2 text-gray-400 transition hover:bg-white/10 hover:text-white"
           >
             <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className=" p-5 ">
-          <div className="flex gap-4 justify-between border-b pb-4">
-            <div className="space-y-4 w-full">
-              {/* Name */}
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-6 overflow-y-auto p-6">
+          {/* SECTION 1: EMPLOYEE INFORMATION */}
+          <section className="space-y-4">
+            <SectionHeading
+              title="Employee Information"
+              description="Employment, contact, personal, and identification details."
+            />
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <Input
-                label="Full Name"
+                label="Employee Name"
                 name="name"
                 value={formData.name}
                 placeholder="John Doe"
                 onChange={handleChange}
+                required
               />
 
-              {/* Email */}
               <Input
-                label="Email"
-                type="email"
-                name="email"
-                value={formData.email}
-                placeholder="john@example.com"
+                label="Employee ID"
+                name="employee_id"
+                value={formData.employee_id}
+                placeholder="GOA/2025/PER/002"
                 onChange={handleChange}
+                required
               />
 
-              {/* Designation */}
               <Input
                 label="Designation"
                 name="designation"
                 value={formData.designation}
                 placeholder="Software Engineer"
                 onChange={handleChange}
+                required
               />
+
+              <Input
+                label="Date of Joining"
+                name="date_of_joining"
+                type="date"
+                value={formData.date_of_joining}
+                onChange={handleChange}
+                required
+              />
+
+              <Input
+                label="Email Address"
+                name="email"
+                type="email"
+                value={formData.email}
+                placeholder="john@example.com"
+                onChange={handleChange}
+                required
+              />
+
               <Input
                 label="Phone Number"
-                type="tel"
                 name="phone_num"
+                type="tel"
                 value={formData.phone_num}
                 placeholder="+91 9876543210"
                 onChange={handleChange}
+                required
+              />
+
+              <Input
+                label="Passport Number"
+                name="passport_no"
+                value={formData.passport_no}
+                placeholder="Passport number"
+                onChange={handleChange}
+              />
+
+              <Input
+                label="Date of Birth"
+                name="date_of_birth"
+                type="date"
+                value={formData.date_of_birth}
+                onChange={handleChange}
+              />
+
+              <Input
+                label="Nationality"
+                name="nationality"
+                value={formData.nationality}
+                placeholder="Indian"
+                onChange={handleChange}
+              />
+
+              <Input
+                label="Visa Number"
+                name="visa_no"
+                value={formData.visa_no}
+                placeholder="Visa number"
+                onChange={handleChange}
+              />
+
+              <Input
+                label="FRRO Registration Number"
+                name="frro_reg_no"
+                value={formData.frro_reg_no}
+                placeholder="FRRO registration number"
+                onChange={handleChange}
+              />
+
+              <Input
+                label="Tax Residency Status"
+                name="tax_residency_status"
+                value={formData.tax_residency_status}
+                placeholder="Resident"
+                onChange={handleChange}
+              />
+
+              <Input
+                label="IW / SSA Status"
+                name="iw_ssa_status"
+                value={formData.iw_ssa_status}
+                placeholder="IW - No SSA (PH)"
+                onChange={handleChange}
               />
             </div>
-            <div className="space-y-4 w-full">
-              {/* Phone */}
+          </section>
 
-              {/* Bank */}
-              <Input
-                label="Bank Name"
-                name="bank"
-                value={formData.bank}
-                placeholder="State Bank of India"
-                onChange={handleChange}
-              />
+          <Divider />
 
-              {/* Account Number */}
-              <Input
-                label="Bank Account Number"
-                name="bank_acc_num"
-                value={formData.bank_acc_num}
-                placeholder="123456789012"
-                onChange={handleChange}
-              />
+          {/* SECTION 2: BANK DETAILS */}
+          <section className="space-y-4">
+            <SectionHeading
+              title="Bank Details"
+              description="Bank account and tax identification information."
+            />
 
-              {/* IFSC */}
-              <Input
-                label="IFSC Code"
-                name="bank_ifsc"
-                value={formData.bank_ifsc}
-                placeholder="SBIN0001234"
-                onChange={handleChange}
-              />
-
-              {/* PAN */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <Input
                 label="PAN Number"
                 name="pan_num"
                 value={formData.pan_num}
                 placeholder="ABCDE1234F"
                 onChange={handleChange}
+                required
+              />
+
+              <Input
+                label="Bank Account Number"
+                name="bank_acc_num"
+                value={formData.bank_acc_num}
+                placeholder="12345678901234"
+                onChange={handleChange}
+                required
+              />
+
+              <Input
+                label="Bank Name"
+                name="bank"
+                value={formData.bank}
+                placeholder="State Bank of India"
+                onChange={handleChange}
+                required
+              />
+
+              <Input
+                label="Bank IFSC Code"
+                name="bank_ifsc"
+                value={formData.bank_ifsc}
+                placeholder="SBIN0001234"
+                onChange={handleChange}
+                required
+              />
+
+              <Input
+                label="Employer's TAN"
+                name="employer_tan"
+                value={formData.employer_tan}
+                placeholder="BLR039029E"
+                onChange={handleChange}
               />
             </div>
-          </div>
-          <div className="flex gap-3 pt-4">
+          </section>
+
+          {/* Error Message */}
+          {error && (
+            <p
+              role="alert"
+              className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400"
+            >
+              {error}
+            </p>
+          )}
+
+          {/* Footer Buttons */}
+          <div className="flex gap-3 border-t border-white/10 pt-5">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-lg border border-white/10 bg-white/5 py-2.5 font-medium text-white hover:bg-white/10 transition"
+              disabled={loading}
+              className="flex-1 rounded-lg border border-white/10 bg-white/5 py-2.5 font-medium text-white transition hover:bg-white/10 disabled:opacity-50"
             >
               Cancel
             </button>
@@ -152,7 +302,7 @@ export function EmployeeForm({ isOpen, onClose }: EmployeeFormProps) {
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 rounded-lg bg-white py-2.5 font-semibold text-black hover:bg-gray-200 transition"
+              className="flex-1 rounded-lg bg-white py-2.5 font-semibold text-black transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? "Adding..." : "Add Employee"}
             </button>
@@ -163,22 +313,52 @@ export function EmployeeForm({ isOpen, onClose }: EmployeeFormProps) {
   );
 }
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+/* Section Heading */
+function SectionHeading({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <div>
+      <h3 className="text-sm font-semibold uppercase tracking-wider text-white">
+        {title}
+      </h3>
+      <p className="mt-1 text-xs text-gray-400">{description}</p>
+    </div>
+  );
+}
+
+/* Reusable Input Component */
+interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
 }
 
-function Input({ label, ...props }: InputProps) {
+function Input({ label, id, name, ...props }: InputProps) {
+  const inputId = id ?? name;
+
   return (
-    <div>
-      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-300">
+    <div className="min-w-0">
+      <label
+        htmlFor={inputId}
+        className="mb-1.5 block text-xs font-semibold text-gray-300"
+      >
         {label}
       </label>
 
       <input
         {...props}
-        required
-        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-gray-500 focus:border-white focus:outline-none focus:ring-1 focus:ring-white"
+        id={inputId}
+        name={name}
+        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-gray-500 focus:border-white focus:ring-1 focus:ring-white"
       />
     </div>
   );
+}
+
+/* Divider Between Sections */
+function Divider() {
+  return <div className="border-t border-white/10" />;
 }

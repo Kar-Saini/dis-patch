@@ -11,7 +11,7 @@
   "dependencies": {
     "@base-ui/react": "^1.5.0",
     "@prisma/adapter-pg": "^7.8.0",
-    "@prisma/client": "^7.8.0",
+    "@prisma/client": "7.2.0",
     "@react-pdf/renderer": "^4.5.1",
     "@sparticuz/chromium-min": "^149.0.0",
     "@types/nodemailer": "^8.0.1",
@@ -25,7 +25,6 @@
     "nodemailer": "^9.0.3",
     "pg": "^8.22.0",
     "playwright": "^1.61.1",
-    "prisma": "^7.8.0",
     "puppeteer-core": "^25.3.0",
     "react": "^19",
     "react-dom": "^19",
@@ -39,6 +38,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "postcss": "^8.5",
+    "prisma": "7.2.0",
     "tailwindcss": "^4.3.3",
     "typescript": "5.7.3"
   },
