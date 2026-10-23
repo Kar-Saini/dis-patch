@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Payslip for the month of {{month}} {{year}}</title>
+
+    <style>
+      @page {
+        size: 920px 1300px;
+        margin: 0;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        background: #fff;
+      }
+
+      body {
+        font-family: Helvetica, Arial, "Liberation Sans", sans-serif;
+        font-size: 14px;
+        color: #000;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .page {
+        position: relative;
+        width: 920px;
+        height: 1300px;
+        margin: 0 auto;
+        background: #fff;
+        overflow: hidden;
+      }
+
+      /* Company Header */
+
+      .letterhead {
+        position: absolute;
+        left: 63px;
+        top: 48px;
+        width: 797px;
+        height: 81px;
+        background: #e9ebef;
+      }
+
+      .company {
+        position: absolute;
+        left: 78px;
+        top: 62px;
+        font-size: 19px;
+        font-weight: 800;
+        letter-spacing: 0.4px;
+        color: #12909a;
+        white-space: nowrap;
+      }
+
+      .company-address {
+        position: absolute;
+        left: 78px;
+        top: 91px;
+        font-size: 11px;
+        color: #444;
+      }
+
+      .company-logo {
+        position: absolute;
+        right: 77px;
+        top: 57px;
+        width: 68px;
+        height: 62px;
+        object-fit: contain;
+      }
+
+      /* Employee Summary */
+
+      .summary {
+        position: absolute;
+        left: 63px;
+        top: 160px;
+        width: 798px;
+        height: 276px;
+        border: 1px solid #c8c8c8;
+      }
+
+      .summary .title {
+        height: 38px;
+        border-bottom: 1px solid #c8c8c8;
+        text-align: center;
+        font-weight: 700;
+        font-size: 15px;
+        line-height: 38px;
+      }
+
+      .summary .col {
+        position: absolute;
+        top: 39px;
+        bottom: 0;
+      }
+
+      .summary .col.left {
+        left: 0;
+        width: 398px;
+      }
+
+      .summary .col.right {
+        left: 398px;
+        right: 0;
+        border-left: 1px solid #c8c8c8;
+      }
+
+      .col h3 {
+        position: absolute;
+        left: 18px;
+        top: 15px;
+        font-size: 13.5px;
+        font-weight: 700;
+      }
+
+      .row {
+        position: absolute;
+        left: 18px;
+        right: 0;
+        font-size: 12.5px;
+        white-space: nowrap;
+      }
+
+      .row .k {
+        position: absolute;
+        left: 0;
+      }
+
+      .row .c {
+        position: absolute;
+      }
+
+      .row .v {
+        position: absolute;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .left .row .c {
+        left: 110px;
+      }
+
+      .left .row .v {
+        left: 132px;
+        right: 8px;
+      }
+
+      .right .row .c {
+        left: 148px;
+      }
+
+      .right .row .v {
+        left: 180px;
+        right: 8px;
+      }
+
+      /* Currency Note */
+
+      .inr {
+        position: absolute;
+        right: 62px;
+        top: 439px;
+        font-size: 12px;
+        font-weight: 700;
+        font-style: italic;
+      }
+
+      /* Section Labels */
+
+      .label {
+        position: absolute;
+        font-size: 13.5px;
+        font-weight: 700;
+      }
+
+      /* Earnings, Deductions and Arrears Tables */
+
+      .tbl {
+        position: absolute;
+        border: 1px solid #c8c8c8;
+        font-size: 13px;
+        background: #fff;
+      }
+
+      .tbl .hd {
+        height: 24px;
+        background: #efefef;
+        border-bottom: 1px solid #c8c8c8;
+        font-weight: 700;
+        font-size: 12.5px;
+        position: relative;
+      }
+
+      .tbl .hd span,
+      .tbl .tr span {
+        position: absolute;
+        top: 0;
+        line-height: 24px;
+      }
+
+      .tbl .tr {
+        height: 26.5px;
+        position: relative;
+      }
+
+      .tbl .tr span {
+        line-height: 26px;
+      }
+
+      .tbl .tr.total {
+        border-top: 1px solid #c8c8c8;
+        font-weight: 700;
+        height: 25px;
+      }
+
+      .tbl .tr.total span {
+        line-height: 26px;
+      }
+
+      .l {
+        left: 11px;
+      }
+
+      .r {
+        right: 12px;
+      }
+
+      /* Bank and Tax Details */
+
+      .bank {
+        position: absolute;
+        left: 468px;
+        top: 493px;
+        width: 392px;
+        height: 136px;
+        border: 1px solid #c8c8c8;
+        font-size: 12.5px;
+      }
+
+      .bank div {
+        position: absolute;
+        left: 7px;
+        right: 7px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* Net Payable */
+
+      .net {
+        position: absolute;
+        left: 63px;
+        top: 855px;
+        width: 802px;
+        height: 88px;
+        border: 1.5px dashed #19c37d;
+        text-align: center;
+      }
+
+      .net .a {
+        position: absolute;
+        left: 12px;
+        right: 12px;
+        top: 19px;
+        font-size: 14px;
+      }
+
+      .net .amount {
+        color: #00a040;
+        font-size: 18px;
+      }
+
+      .net .b {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 50px;
+        font-size: 12px;
+        color: #666;
+      }
+
+      /* Footer */
+
+      .foot {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 964px;
+        text-align: center;
+        font-size: 12px;
+        color: #666;
+      }
+
+      @media print {
+        html,
+        body {
+          margin: 0;
+          padding: 0;
+        }
+
+        .page {
+          margin: 0;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="page">
+      <!-- Company Header -->
+
+      <div class="letterhead"></div>
+
+      <div class="company">GOA OCEANARIUM PRIVATE LIMITED</div>
+
+      <div class="company-address">
+        H. No. 78, Malbhat, Margao, South Goa, Goa 403601
+      </div>
+
+      <img
+        class="company-logo"
+        src="data:image/png;base64,{{logoBase64}}"
+        alt="Company Logo"
+      />
+
+      <!-- Employee Summary -->
+
+      <div class="summary">
+        <div class="title">Payslip for the month of {{month}} {{year}}</div>
+
+        <!-- Left Column: Employee Summary -->
+
+        <div class="col left">
+          <h3>EMPLOYEE SUMMARY</h3>
+
+          <div class="row" style="top: 41px">
+            <span class="k">Employee Name</span>
+            <span class="c">:</span>
+            <span class="v">{{employee_name}}</span>
+          </div>
+
+          <div class="row" style="top: 67px">
+            <span class="k">Employee ID</span>
+            <span class="c">:</span>
+            <span class="v">{{employee_id}}</span>
+          </div>
+
+          <div class="row" style="top: 94px">
+            <span class="k">Designation</span>
+            <span class="c">:</span>
+            <span class="v">{{designation}}</span>
+          </div>
+
+          <div class="row" style="top: 120px">
+            <span class="k">Pay Date</span>
+            <span class="c">:</span>
+            <span class="v">{{pay_date}}</span>
+          </div>
+
+          <div class="row" style="top: 147px">
+            <span class="k">Date of Joining</span>
+            <span class="c">:</span>
+            <span class="v">{{date_of_joining}}</span>
+          </div>
+
+          <div class="row" style="top: 173px">
+            <span class="k">Payable Days</span>
+            <span class="c">:</span>
+            <span class="v">{{paid_days}}</span>
+          </div>
+
+          <div class="row" style="top: 199px">
+            <span class="k">LOP Days</span>
+            <span class="c">:</span>
+            <span class="v">{{lop_days}}</span>
+          </div>
+        </div>
+
+        <!-- Right Column: Employee Information -->
+
+        <div class="col right">
+          <h3 style="left: 24px">EMPLOYEE INFORMATION</h3>
+
+          <div class="row" style="left: 24px; top: 41px">
+            <span class="k">Passport No.</span>
+            <span class="c">:</span>
+            <span class="v">{{passport_no}}</span>
+          </div>
+
+          <div class="row" style="left: 24px; top: 67px">
+            <span class="k">Date of Birth</span>
+            <span class="c">:</span>
+            <span class="v">{{date_of_birth}}</span>
+          </div>
+
+          <div class="row" style="left: 24px; top: 94px">
+            <span class="k">Nationality</span>
+            <span class="c">:</span>
+            <span class="v">{{nationality}}</span>
+          </div>
+
+          <div class="row" style="left: 24px; top: 120px">
+            <span class="k">Visa No.</span>
+            <span class="c">:</span>
+            <span class="v">{{visa_no}}</span>
+          </div>
+
+          <div class="row" style="left: 24px; top: 147px">
+            <span class="k">FRRO Reg. No.</span>
+            <span class="c">:</span>
+            <span class="v">{{frro_reg_no}}</span>
+          </div>
+
+          <div class="row" style="left: 24px; top: 173px">
+            <span class="k">Tax Residency Status</span>
+            <span class="c">:</span>
+            <span class="v">{{tax_residency_status}}</span>
+          </div>
+
+          <div class="row" style="left: 24px; top: 199px">
+            <span class="k">IW / SSA Status</span>
+            <span class="c">:</span>
+            <span class="v">{{iw_ssa_status}}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="inr">*(All amount values are in INR)</div>
+
+      <!-- Earnings -->
+
+      <div class="label" style="left: 63px; top: 473px">EARNINGS</div>
+
+      <div
+        class="tbl"
+        style="left: 63px; top: 493px; width: 399px; height: 136px"
+      >
+        <div class="hd">
+          <span class="l">COMPONENT</span>
+          <span class="r">AMOUNT</span>
+        </div>
+
+        <div class="tr">
+          <span class="l">Basic</span>
+          <span class="r">Rs. {{basic}}</span>
+        </div>
+
+        <div class="tr">
+          <span class="l">House Rent Allowance</span>
+          <span class="r">Rs. {{hra}}</span>
+        </div>
+
+        <div class="tr">
+          <span class="l">Special Allowance</span>
+          <span class="r">Rs. {{special_allowance}}</span>
+        </div>
+
+        <div class="tr total">
+          <span class="l">Gross Earnings</span>
+          <span class="r">Rs. {{gross_earnings}}</span>
+        </div>
+      </div>
+
+      <!-- Bank and Tax Details -->
+
+      <div class="label" style="left: 468px; top: 473px">
+        BANK &amp; TAX DETAILS
+      </div>
+
+      <div class="bank">
+        <div style="top: 6px">PAN: {{pan}}</div>
+
+        <div style="top: 32px">Bank A/C Number: {{account_no}}</div>
+
+        <div style="top: 59px">Bank: {{bank}}</div>
+
+        <div style="top: 85px">Bank IFSC: {{ifsc}}</div>
+
+        <div style="top: 111px">Employer's TAN: {{employer_tan}}</div>
+      </div>
+
+      <!-- Deductions -->
+
+      <div class="label" style="left: 63px; top: 646px">DEDUCTIONS</div>
+
+      <div
+        class="tbl"
+        style="left: 63px; top: 666px; width: 399px; height: 136px"
+      >
+        <div class="hd">
+          <span class="l">COMPONENT</span>
+          <span class="r">AMOUNT</span>
+        </div>
+
+        <div class="tr">
+          <span class="l">Income Tax</span>
+          <span class="r">Rs. {{income_tax}}</span>
+        </div>
+
+        <div class="tr">
+          <span class="l">Provident Fund</span>
+          <span class="r">Rs. {{pf}}</span>
+        </div>
+
+        <div class="tr">
+          <span class="l">Health &amp; Education Cess</span>
+          <span class="r">Rs. {{cess}}</span>
+        </div>
+
+        <div class="tr total">
+          <span class="l">Total Deductions</span>
+          <span class="r">Rs. {{total_deductions}}</span>
+        </div>
+      </div>
+
+      <!-- Arrears and Bonus -->
+
+      <div class="label" style="left: 468px; top: 646px">
+        ARREARS &amp; BONUS
+      </div>
+
+      <div
+        class="tbl"
+        style="left: 468px; top: 666px; width: 397px; height: 136px"
+      >
+        <div class="hd">
+          <span style="left: 9px">DESCRIPTION</span>
+          <span style="right: 8px">AMOUNT</span>
+        </div>
+
+        <div class="tr">
+          <span style="left: 9px">Basic Arrears</span>
+          <span style="right: 8px">Rs. {{basic_arrears}}</span>
+        </div>
+
+        <div class="tr">
+          <span style="left: 9px">Special Allowance Arrears</span>
+          <span style="right: 8px">Rs. {{special_allowance_arrears}}</span>
+        </div>
+
+        <div class="tr">
+          <span style="left: 9px">Performance Bonus</span>
+          <span style="right: 8px">Rs. {{performance_bonus}}</span>
+        </div>
+
+        <div class="tr total">
+          <span style="left: 9px">Total</span>
+          <span style="right: 8px">Rs. {{total_arrears_bonus}}</span>
+        </div>
+      </div>
+
+      <!-- Net Payable -->
+
+      <div class="net">
+        <div class="a">
+          Total Net Payable
+          <b class="amount">Rs. {{net_pay}}</b>
+          ({{net_pay_words}})
+        </div>
+
+        <div class="b">
+          **Total Net Payable = Gross Earnings - Total Deductions
+        </div>
+      </div>
+
+      <!-- Footer -->
+
+      <div class="foot">--This is a system-generated document.--</div>
+    </div>
+  </body>
+</html>
