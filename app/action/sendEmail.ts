@@ -26,6 +26,30 @@ interface EmailResult {
 type TemplateValues = Record<string, string | number>;
 
 /* ---------------------------------------------------
+   LOGGING HELPERS
+--------------------------------------------------- */
+
+function logSection(title: string) {
+  console.info(`\n========== ${title} ==========`);
+}
+
+function logErrorDetails(error: unknown) {
+  const err = error as Error & {
+    code?: string;
+    command?: string;
+    response?: string;
+    responseCode?: number;
+  };
+
+  console.error("Error message:", err?.message ?? String(error));
+  console.error("Error code:", err?.code ?? "N/A");
+  console.error("SMTP command:", err?.command ?? "N/A");
+  console.error("SMTP response code:", err?.responseCode ?? "N/A");
+  console.error("SMTP response:", err?.response ?? "N/A");
+  console.error("Full error:", error);
+}
+
+/* ---------------------------------------------------
    READ THE HTML TEMPLATE
 --------------------------------------------------- */
 
@@ -37,19 +61,33 @@ async function readPayslipTemplate(): Promise<string> {
     join(process.cwd(), "new_template.html"),
   ];
 
+  logSection("PAYSLIP TEMPLATE: LOADING");
+  console.info("Project directory:", process.cwd());
+
   for (const filePath of paths) {
     try {
-      return await readFile(filePath, "utf8");
+      const template = await readFile(filePath, "utf8");
+
+      console.info("Template loaded successfully:", filePath);
+      console.info("Template size:", `${template.length} characters`);
+
+      return template;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+        console.error("Failed to read template:", filePath);
+        logErrorDetails(error);
         throw error;
       }
+
+      console.info("Template not found at:", filePath);
     }
   }
 
-  throw new Error(
-    "Payslip template not found. Put new_template.html in the project root or public folder.",
-  );
+  const message =
+    "Payslip template not found. Expected template/new_tempalte.html, template/new_template.html, public/new_template.html, or new_template.html in the project root.";
+
+  console.error(message);
+  throw new Error(message);
 }
 
 /* ---------------------------------------------------
@@ -128,7 +166,7 @@ function getPayslipTemplateData(
   month: string,
   year: string,
 ): TemplateValues {
-  // Preserve all existing constants, including the logo.
+  // Preserve existing constants, including any logo constant.
   const constants = SALARY_CONSTANTS as unknown as TemplateValues;
 
   return {
@@ -161,7 +199,7 @@ function getPayslipTemplateData(
     ifsc: employee.bank_ifsc,
     employer_tan: employee.employer_tan || "N/A",
 
-    // These default to zero without removing any other constants.
+    // Arrears and bonuses
     basic_arrears: constants.basic_arrears ?? "0.00",
     special_allowance_arrears: constants.special_allowance_arrears ?? "0.00",
     performance_bonus: constants.performance_bonus ?? "0.00",
@@ -174,10 +212,24 @@ function getPayslipTemplateData(
 --------------------------------------------------- */
 
 function fillTemplate(template: string, values: TemplateValues): string {
-  return template.replace(
+  const populatedHtml = template.replace(
     /\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g,
     (_match, key: string) => escapeHtml(String(values[key] ?? "N/A")),
   );
+
+  const remainingPlaceholders = populatedHtml.match(
+    /\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g,
+  );
+
+  if (remainingPlaceholders?.length) {
+    console.warn("Unresolved HTML template placeholders:", [
+      ...new Set(remainingPlaceholders),
+    ]);
+  } else {
+    console.info("All HTML template placeholders were processed.");
+  }
+
+  return populatedHtml;
 }
 
 /* ---------------------------------------------------
@@ -185,12 +237,33 @@ function fillTemplate(template: string, values: TemplateValues): string {
 --------------------------------------------------- */
 
 async function generatePdf(html: string): Promise<Buffer> {
-  const browser = await puppeteer.launch({
-    headless: true,
-  });
+  logSection("PDF GENERATION: STARTED");
+
+  let browser;
 
   try {
+    browser = await puppeteer.launch({
+      headless: true,
+    });
+
     const page = await browser.newPage();
+
+    page.on("console", (message) => {
+      if (message.type() === "error") {
+        console.error("[PDF Browser Console]", message.text());
+      }
+    });
+
+    page.on("pageerror", (error) => {
+      console.error("[PDF Browser Error]", error.message);
+    });
+
+    page.on("requestfailed", (request) => {
+      console.error("[PDF Resource Failed]", {
+        url: request.url(),
+        error: request.failure()?.errorText,
+      });
+    });
 
     await page.setViewport({
       width: 1100,
@@ -203,6 +276,39 @@ async function generatePdf(html: string): Promise<Buffer> {
       timeout: 30000,
     });
 
+    // Wait for images to finish loading before generating the PDF.
+    const imageResults = await page.evaluate(async () => {
+      const images = Array.from(document.images);
+
+      return Promise.all(
+        images.map(
+          (img) =>
+            new Promise<{
+              src: string;
+              loaded: boolean;
+              naturalWidth: number;
+            }>((resolve) => {
+              const finish = () =>
+                resolve({
+                  src: img.currentSrc || img.src,
+                  loaded: img.complete && img.naturalWidth > 0,
+                  naturalWidth: img.naturalWidth,
+                });
+
+              if (img.complete) {
+                finish();
+                return;
+              }
+
+              img.addEventListener("load", finish, { once: true });
+              img.addEventListener("error", finish, { once: true });
+            }),
+        ),
+      );
+    });
+
+    console.info("PDF image loading results:", imageResults);
+
     const pdf = await page.pdf({
       printBackground: true,
       preferCSSPageSize: true,
@@ -214,9 +320,20 @@ async function generatePdf(html: string): Promise<Buffer> {
       },
     });
 
-    return Buffer.from(pdf);
+    const pdfBuffer = Buffer.from(pdf);
+
+    console.info("PDF generated successfully.");
+    console.info("PDF size:", `${(pdfBuffer.length / 1024).toFixed(2)} KB`);
+
+    return pdfBuffer;
+  } catch (error) {
+    console.error("PDF GENERATION FAILED");
+    logErrorDetails(error);
+    throw error;
   } finally {
-    await browser.close();
+    if (browser) {
+      await browser.close();
+    }
   }
 }
 
@@ -233,6 +350,13 @@ export async function sendSalaryEmail({
   monthAndYear: MonthAndYear;
   subject: string;
 }) {
+  logSection("SALARY EMAIL BATCH: STARTED");
+
+  console.info("Recipients requested:", employeeEmails.length);
+  console.info("Payslip month:", monthAndYear.month);
+  console.info("Payslip year:", monthAndYear.year);
+  console.info("Subject:", subject);
+
   const year = Number(monthAndYear.year);
 
   if (!Number.isInteger(year) || year < 1900 || year > 9999) {
@@ -259,17 +383,25 @@ export async function sendSalaryEmail({
   for (const email of employeeEmails) {
     let employee: Employee | null = null;
 
+    logSection(`PROCESSING RECIPIENT: ${email}`);
+
     try {
+      console.info("Looking up employee:", email);
+
       const foundEmployee = await getEmployeeByEmail(email);
 
       if (!foundEmployee || typeof foundEmployee === "string") {
+        const message =
+          typeof foundEmployee === "string"
+            ? foundEmployee
+            : `Employee not found: ${email}`;
+
+        console.error("EMPLOYEE LOOKUP FAILED:", message);
+
         results.push({
           email,
           status: "FAILED",
-          error:
-            typeof foundEmployee === "string"
-              ? foundEmployee
-              : `Employee not found: ${email}`,
+          error: message,
         });
 
         continue;
@@ -277,13 +409,27 @@ export async function sendSalaryEmail({
 
       employee = foundEmployee as Employee;
 
-      // Populate the uploaded new-format HTML.
+      console.info("Employee found:", {
+        name: employee.name,
+        employeeId: employee.employee_id || employee.id,
+        email: employee.email,
+        designation: employee.designation,
+      });
+
+      // Populate the HTML template.
+      console.info("Populating payslip HTML template.");
+
       const values = getPayslipTemplateData(employee, monthLabel, String(year));
 
       const populatedHtml = fillTemplate(template, values);
 
+      console.info("HTML template populated successfully.");
+      console.info("Generating PDF for:", employee.email);
+
       // Render the populated HTML as a PDF.
       const pdfBuffer = await generatePdf(populatedHtml);
+
+      console.info("PDF ready. Sending email to:", employee.email);
 
       // Email the PDF attachment.
       const info = await sendEmailWithAttachment({
@@ -308,16 +454,30 @@ export async function sendSalaryEmail({
         messageId: info.messageId ?? "",
       });
 
-      console.info(`Salary slip sent to ${employee.email}`);
+      console.info("RECIPIENT PROCESS COMPLETED SUCCESSFULLY:", {
+        employee: employee.name,
+        email: employee.email,
+        messageId: info.messageId,
+      });
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
+      const err = error as Error & {
+        code?: string;
+        command?: string;
+        response?: string;
+        responseCode?: number;
+      };
 
-      console.error(`Failed to send salary slip to ${email}:`, error);
+      console.error("========== PAYSLIP PROCESSING FAILED ==========");
+      console.error("Recipient:", email);
+      console.error("Employee:", employee?.name ?? "Employee lookup failed");
+      console.error("Payslip period:", `${monthLabel} ${year}`);
+      logErrorDetails(error);
+      console.error("================================================");
 
       results.push({
         email,
         status: "FAILED",
-        error: message,
+        error: err?.message || String(error),
       });
 
       if (employee) {
@@ -338,11 +498,17 @@ export async function sendSalaryEmail({
 
   if (logs.length > 0) {
     try {
+      console.info("Saving payslip delivery logs.");
+
       await prisma.payslipLog.createMany({
         data: logs,
       });
+
+      console.info("Payslip delivery logs saved successfully.");
     } catch (error) {
-      console.error("Failed to save payslip email logs:", error);
+      console.error("FAILED TO SAVE PAYSLIP DELIVERY LOGS");
+      logErrorDetails(error);
+
       logWarning =
         "Emails were processed, but the payslip logs could not be saved.";
     }
@@ -353,6 +519,19 @@ export async function sendSalaryEmail({
   const totalFailed = results.filter(
     (result) => result.status === "FAILED",
   ).length;
+
+  logSection("SALARY EMAIL BATCH: FINAL SUMMARY");
+
+  console.info("Total requested:", employeeEmails.length);
+  console.info("Successfully sent:", totalSent);
+  console.info("Failed:", totalFailed);
+  console.info("Results:", results);
+
+  if (logWarning) {
+    console.warn("Warning:", logWarning);
+  }
+
+  console.info("===============================================\n");
 
   return {
     success: totalSent > 0 && totalFailed === 0,
@@ -427,18 +606,72 @@ Goa Oceanarium Private Limited
     </div>
   `;
 
-  return transporter.sendMail({
-    from,
-    to: employee.email,
-    subject,
-    text,
-    html,
-    attachments: [
-      {
-        filename: `Payslip_${month}_${year}.pdf`,
-        content: pdfBuffer,
-        contentType: "application/pdf",
-      },
-    ],
-  });
+  logSection("SALARY EMAIL: SENDING");
+
+  console.info("Recipient:", employee.email);
+  console.info("Employee:", employee.name);
+  console.info("Payslip period:", `${month} ${year}`);
+  console.info("Subject:", subject);
+  console.info("From:", from);
+  console.info("PDF attachment:", `Payslip_${month}_${year}.pdf`);
+  console.info("PDF size:", `${(pdfBuffer.length / 1024).toFixed(2)} KB`);
+
+  try {
+    const info = await transporter.sendMail({
+      from,
+      to: employee.email,
+      subject,
+      text,
+      html,
+      attachments: [
+        {
+          filename: `Payslip_${month}_${year}.pdf`,
+          content: pdfBuffer,
+          contentType: "application/pdf",
+        },
+      ],
+    });
+
+    logSection("SALARY EMAIL: SUCCESS");
+
+    console.info("Recipient:", employee.email);
+    console.info("Employee:", employee.name);
+    console.info("Message ID:", info.messageId);
+    console.info("SMTP response:", info.response);
+    console.info("Accepted recipients:", info.accepted);
+    console.info("Rejected recipients:", info.rejected);
+
+    // Nodemailer can resolve even if a recipient was rejected.
+    const accepted = info.accepted.some(
+      (recipient) =>
+        String(recipient).toLowerCase() === employee.email.toLowerCase(),
+    );
+
+    const rejected = info.rejected.some(
+      (recipient) =>
+        String(recipient).toLowerCase() === employee.email.toLowerCase(),
+    );
+
+    if (!accepted || rejected) {
+      throw new Error(
+        `SMTP did not confirm acceptance for recipient ${employee.email}. ` +
+          `Accepted: ${JSON.stringify(info.accepted)}. ` +
+          `Rejected: ${JSON.stringify(info.rejected)}.`,
+      );
+    }
+
+    console.info("SMTP accepted the recipient successfully.");
+    console.info("============================================");
+
+    return info;
+  } catch (error) {
+    console.error("========== SALARY EMAIL: FAILED ==========");
+    console.error("Recipient:", employee.email);
+    console.error("Employee:", employee.name);
+    console.error("Payslip period:", `${month} ${year}`);
+    logErrorDetails(error);
+    console.error("==========================================");
+
+    throw error;
+  }
 }
