@@ -392,6 +392,19 @@ export default function DispatchPage() {
     createDefaultCalendarStatus(now.getFullYear(), now.getMonth()),
   );
 
+  // Counts for the currently selected payroll month.
+  const workingDays = Object.values(calendarStatus).filter(
+    (status) => status === "working",
+  ).length;
+
+  const offDays = Object.values(calendarStatus).filter(
+    (status) => status === "off",
+  ).length;
+
+  const leaveDays = Object.values(calendarStatus).filter(
+    (status) => status === "leave",
+  ).length;
+
   const monthAndYear = {
     month: MONTHS[calendarDate.month],
     year: String(calendarDate.year),
@@ -498,6 +511,10 @@ export default function DispatchPage() {
         employeeEmails: Array.from(selectedEmployees),
         monthAndYear,
         subject,
+        calendarStatus,
+        workingDays,
+        offDays,
+        leaveDays,
       });
 
       if (!res.success) {
@@ -514,20 +531,6 @@ export default function DispatchPage() {
       setSelectedEmployees(new Set());
 
       console.table(res.results);
-
-      /*
-       * calendarStatus is currently available here if you later want
-       * to send the working/off/leave information to the server action.
-       *
-       * Example:
-       *
-       * await sendSalaryEmail({
-       *   employeeEmails: Array.from(selectedEmployees),
-       *   monthAndYear,
-       *   subject,
-       *   calendarStatus,
-       * });
-       */
     } catch (error) {
       console.error(error);
       setSentMessage("Something went wrong while sending emails.");
@@ -671,6 +674,30 @@ export default function DispatchPage() {
               onStatusChange={handleCalendarStatusChange}
               onMonthChange={handleCalendarMonthChange}
             />
+
+            {/* Working, off, and leave day summary */}
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              <div className="rounded-lg bg-emerald-400/10 p-3">
+                <p className="text-xs text-emerald-400">Working Days</p>
+                <p className="mt-1 text-lg font-semibold text-white">
+                  {workingDays}
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-red-400/10 p-3">
+                <p className="text-xs text-red-400">Off Days</p>
+                <p className="mt-1 text-lg font-semibold text-white">
+                  {offDays}
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-amber-400/10 p-3">
+                <p className="text-xs text-amber-400">Leave Days</p>
+                <p className="mt-1 text-lg font-semibold text-white">
+                  {leaveDays}
+                </p>
+              </div>
+            </div>
 
             <p className="mt-2 text-xs text-white/25">
               Email will be logged for{" "}

@@ -16,6 +16,9 @@ interface MonthAndYear {
   year: string;
 }
 
+type DayStatus = "working" | "off" | "leave";
+type CalendarStatus = Record<string, DayStatus>;
+
 interface EmailResult {
   email: string;
   status: "SENT" | "FAILED";
@@ -60,7 +63,7 @@ async function readPayslipTemplate(): Promise<string> {
     join(process.cwd(), "public", "new_template.html"),
     join(process.cwd(), "new_template.html"),
   ];
-
+  console.log(paths);
   logSection("PAYSLIP TEMPLATE: LOADING");
   console.info("Project directory:", process.cwd());
 
@@ -157,6 +160,187 @@ function getMonthLabel(month: string, year: string): string {
   );
 }
 
+function parseAmount(value: unknown): number {
+  const parsed = Number(String(value ?? "0").replace(/,/g, ""));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatAmount(value: number): string {
+  return value.toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+    useGrouping: true,
+  });
+}
+
+function numberToWordsIndian(value: number): string {
+  const ones = [
+    "Zero",
+    "One",
+    "Two",
+    "Three",
+    "Four",
+    "Five",
+    "Six",
+    "Seven",
+    "Eight",
+    "Nine",
+    "Ten",
+    "Eleven",
+    "Twelve",
+    "Thirteen",
+    "Fourteen",
+    "Fifteen",
+    "Sixteen",
+    "Seventeen",
+    "Eighteen",
+    "Nineteen",
+  ];
+  const tens = [
+    "",
+    "",
+    "Twenty",
+    "Thirty",
+    "Forty",
+    "Fifty",
+    "Sixty",
+    "Seventy",
+    "Eighty",
+    "Ninety",
+  ];
+
+  const underThousand = (n: number): string => {
+    const parts: string[] = [];
+    if (n >= 100) {
+      parts.push(`${ones[Math.floor(n / 100)]} Hundred`);
+      n %= 100;
+    }
+    if (n >= 20) {
+      parts.push(tens[Math.floor(n / 10)]);
+      if (n % 10) parts.push(ones[n % 10]);
+    } else if (n > 0) {
+      parts.push(ones[n]);
+    }
+    return parts.join(" ");
+  };
+
+  if (!Number.isFinite(value) || value < 0) return "Zero";
+  let n = Math.floor(value);
+  if (n === 0) return "Zero";
+  const parts: string[] = [];
+  const groups: Array<[number, string]> = [
+    [10000000, "Crore"],
+    [100000, "Lakh"],
+    [1000, "Thousand"],
+    [1, ""],
+  ];
+  for (const [unit, label] of groups) {
+    if (n >= unit) {
+      const count = Math.floor(n / unit);
+      parts.push(underThousand(count) + (label ? ` ${label}` : ""));
+      n %= unit;
+    }
+  }
+  return parts.join(" ").trim();
+}
+
+function getAttendanceSalaryValues(
+  calendarStatus: CalendarStatus,
+  year: number,
+  monthNumber: number,
+): TemplateValues {
+  const totalCalendarDays = new Date(year, monthNumber, 0).getDate();
+  const salaryBasisDays = 22; // SALARY_CONSTANTS represent a full 22-working-day month.
+  let workingDays = 0;
+  let offDays = 0;
+  let leaveDays = 0;
+
+  for (const [dateKey, status] of Object.entries(calendarStatus)) {
+    const [dateYear, dateMonth, dateDay] = dateKey.split("-").map(Number);
+    if (
+      dateYear !== year ||
+      dateMonth !== monthNumber ||
+      dateDay < 1 ||
+      dateDay > totalCalendarDays
+    ) {
+      continue;
+    }
+
+    if (status === "working") workingDays++;
+    else if (status === "off") offDays++;
+    else if (status === "leave") leaveDays++;
+  }
+
+  // Salary constants are based on 22 working days. Only days marked "working"
+  // count as worked/paid days; "off" days are non-working days and "leave"
+  // days are treated as unpaid leave (LOP).
+  const paidDays = Math.min(workingDays, salaryBasisDays);
+  const lopDays = Math.min(leaveDays, Math.max(0, salaryBasisDays - paidDays));
+  const payableRatio = paidDays / salaryBasisDays;
+
+  const basic = parseAmount(SALARY_CONSTANTS.basic) * payableRatio;
+  const hra = parseAmount(SALARY_CONSTANTS.hra) * payableRatio;
+  const specialAllowance =
+    parseAmount(SALARY_CONSTANTS.special_allowance) * payableRatio;
+  const grossEarnings = basic + hra + specialAllowance;
+
+  // These constants are also treated as full-month amounts and prorated using
+  // the same 22-working-day ratio. Change this if your payroll policy requires
+  // tax/PF/ESI to be calculated by separate statutory rules.
+  const tds = parseAmount(SALARY_CONSTANTS.income_tax) * payableRatio;
+  const pf = parseAmount(SALARY_CONSTANTS.pf) * payableRatio;
+  const esi =
+    parseAmount((SALARY_CONSTANTS as Record<string, unknown>).esi) *
+    payableRatio;
+  const cess = parseAmount(SALARY_CONSTANTS.cess) * payableRatio;
+  const configuredTotalDeductions = parseAmount(
+    SALARY_CONSTANTS.total_deductions,
+  );
+  const totalDeductions =
+    configuredTotalDeductions > 0
+      ? configuredTotalDeductions * payableRatio
+      : tds + pf + esi + cess;
+  const netPay = grossEarnings - totalDeductions;
+
+  console.info("Attendance and salary calculation:", {
+    salaryBasisDays,
+    totalCalendarDays,
+    workingDays,
+    offDays,
+    leaveDays,
+    paidDays,
+    lopDays,
+    payableRatio,
+    basic: formatAmount(basic),
+    hra: formatAmount(hra),
+    specialAllowance: formatAmount(specialAllowance),
+    grossEarnings: formatAmount(grossEarnings),
+    totalDeductions: formatAmount(totalDeductions),
+    netPay: formatAmount(netPay),
+  });
+
+  return {
+    basic: formatAmount(basic),
+    hra: formatAmount(hra),
+    special_allowance: formatAmount(specialAllowance),
+    gross_earnings: formatAmount(grossEarnings),
+    paid_days: paidDays,
+    lop_days: lopDays,
+    salary_basis_days: salaryBasisDays,
+    total_calendar_days: totalCalendarDays,
+    working_days: workingDays,
+    off_days: offDays,
+    leave_days: leaveDays,
+    income_tax: formatAmount(tds),
+    pf: formatAmount(pf),
+    esi: formatAmount(esi),
+    cess: formatAmount(cess),
+    total_deductions: formatAmount(totalDeductions),
+    net_pay: formatAmount(netPay),
+    net_pay_words: `Rupees ${numberToWordsIndian(Math.max(0, netPay))} Only`,
+  };
+}
+
 /* ---------------------------------------------------
    BUILD TEMPLATE DATA
 --------------------------------------------------- */
@@ -165,9 +349,14 @@ function getPayslipTemplateData(
   employee: Employee,
   month: string,
   year: string,
+  salaryValues: TemplateValues,
 ): TemplateValues {
-  // Preserve existing constants, including any logo constant.
-  const constants = SALARY_CONSTANTS as unknown as TemplateValues;
+  // Preserve existing constants, including the logo, then override salary
+  // fields with values calculated from this month's attendance calendar.
+  const constants = {
+    ...(SALARY_CONSTANTS as unknown as TemplateValues),
+    ...salaryValues,
+  };
 
   return {
     ...constants,
@@ -255,7 +444,7 @@ async function generatePdf(html: string): Promise<Buffer> {
     });
 
     page.on("pageerror", (error) => {
-      console.error("[PDF Browser Error]", error.message);
+      console.error("[PDF Browser Error]", error.message as string);
     });
 
     page.on("requestfailed", (request) => {
@@ -345,10 +534,17 @@ export async function sendSalaryEmail({
   employeeEmails,
   monthAndYear,
   subject,
+  calendarStatus,
 }: {
   employeeEmails: string[];
   monthAndYear: MonthAndYear;
   subject: string;
+  calendarStatus: CalendarStatus;
+  // Accepted from the UI for convenience; the server recalculates counts
+  // from calendarStatus so the salary calculation uses the actual calendar.
+  workingDays?: number;
+  offDays?: number;
+  leaveDays?: number;
 }) {
   logSection("SALARY EMAIL BATCH: STARTED");
 
@@ -366,6 +562,11 @@ export async function sendSalaryEmail({
   const monthNumber = getMonthNumber(monthAndYear.month, monthAndYear.year);
 
   const monthLabel = getMonthLabel(monthAndYear.month, monthAndYear.year);
+  const salaryValues = getAttendanceSalaryValues(
+    calendarStatus,
+    year,
+    monthNumber,
+  );
 
   const logs: {
     employeeId: string;
@@ -419,7 +620,12 @@ export async function sendSalaryEmail({
       // Populate the HTML template.
       console.info("Populating payslip HTML template.");
 
-      const values = getPayslipTemplateData(employee, monthLabel, String(year));
+      const values = getPayslipTemplateData(
+        employee,
+        monthLabel,
+        String(year),
+        salaryValues,
+      );
 
       const populatedHtml = fillTemplate(template, values);
 
