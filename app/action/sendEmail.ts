@@ -31,6 +31,8 @@ type TemplateValues = Record<string, string | number>;
 
 async function readPayslipTemplate(): Promise<string> {
   const paths = [
+    join(process.cwd(), "template", "new_tempalte.html"),
+    join(process.cwd(), "template", "new_template.html"),
     join(process.cwd(), "public", "new_template.html"),
     join(process.cwd(), "new_template.html"),
   ];

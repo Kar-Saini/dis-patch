@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import {
   Plus,
   Mail,
-  Briefcase,
   Calendar,
   Trash2,
   Phone,
@@ -17,6 +16,7 @@ import {
   IdCard,
   Loader2,
   RefreshCw,
+  ChevronDown,
 } from "lucide-react";
 
 import { EmployeeForm } from "@/components/EmployeeForm";
@@ -28,6 +28,9 @@ export default function EmployeesPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [expandedEmployees, setExpandedEmployees] = useState<Set<string>>(
+    new Set(),
+  );
 
   // Load employees from the database
   const loadEmployees = useCallback(async () => {
@@ -62,10 +65,24 @@ export default function EmployeesPage() {
     void loadEmployees();
   };
 
-  // Existing behavior: removes the employee from the current view only.
+  // Removes the employee from the current view only.
   // This does not delete the record from the database.
   const handleDeleteEmployee = (id: string) => {
     setEmployees((prev) => prev.filter((employee) => employee.id !== id));
+  };
+
+  const toggleEmployee = (id: string) => {
+    setExpandedEmployees((prev) => {
+      const next = new Set(prev);
+
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+
+      return next;
+    });
   };
 
   return (
@@ -133,168 +150,191 @@ export default function EmployeesPage() {
       {/* Employee Cards */}
       {!isLoading || employees.length > 0 ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {employees.map((employee) => (
-            <div
-              key={employee.id}
-              className="rounded-xl border border-white/10 bg-white/[0.03] p-5 transition hover:border-white/20 hover:bg-white/[0.05]"
-            >
-              {/* Employee Header */}
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5">
-                    <UserRound className="h-5 w-5 text-gray-300" />
-                  </div>
+          {employees.map((employee) => {
+            const isExpanded = expandedEmployees.has(employee.id);
 
-                  <div className="min-w-0">
-                    <h3 className="break-words text-lg font-semibold text-white">
-                      {employee.name}
-                    </h3>
+            return (
+              <div
+                key={employee.id}
+                className="rounded-xl border border-white/10 bg-white/[0.03] p-5 transition hover:border-white/20 hover:bg-white/[0.05]"
+              >
+                {/* Compact Employee Summary */}
+                <div className="flex items-start gap-3">
+                  <button
+                    type="button"
+                    onClick={() => toggleEmployee(employee.id)}
+                    aria-expanded={isExpanded}
+                    aria-label={`${isExpanded ? "Hide" : "Show"} details for ${employee.name}`}
+                    className="flex min-w-0 flex-1 items-start gap-3 rounded-lg text-left"
+                  >
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5">
+                      <UserRound className="h-5 w-5 text-gray-300" />
+                    </div>
 
-                    <p className="mt-1 text-sm text-gray-400">
-                      {employee.designation}
-                    </p>
-                  </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="break-words text-lg font-semibold text-white">
+                        {employee.name}
+                      </h3>
+
+                      <p className="mt-1 text-sm text-gray-400">
+                        {employee.designation}
+                      </p>
+
+                      <p className="mt-2 text-xs text-gray-500">Employee ID</p>
+
+                      <p className="mt-0.5 break-all font-mono text-sm text-gray-200">
+                        {employee.employee_id || "Not provided"}
+                      </p>
+                    </div>
+
+                    <ChevronDown
+                      className={`mt-1 h-5 w-5 shrink-0 text-gray-400 transition-transform duration-200 ${
+                        isExpanded ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteEmployee(employee.id)}
+                    title="Remove from current view"
+                    aria-label={`Remove ${employee.name} from current view`}
+                    className="shrink-0 rounded-lg p-2 text-gray-500 transition hover:bg-red-500/10 hover:text-red-400"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => handleDeleteEmployee(employee.id)}
-                  title="Remove from current view"
-                  aria-label={`Remove ${employee.name} from current view`}
-                  className="shrink-0 rounded-lg p-2 text-gray-500 transition hover:bg-red-500/10 hover:text-red-400"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                {/* Expandable Employee Details */}
+                {isExpanded && (
+                  <div>
+                    {/* Employee Information */}
+                    <SectionTitle
+                      icon={<UserRound className="h-4 w-4" />}
+                      title="Employee Information"
+                    />
+
+                    <div className="mt-3 space-y-3">
+                      <InfoRow
+                        icon={<Mail />}
+                        label="Email"
+                        value={employee.email}
+                      />
+
+                      <InfoRow
+                        icon={<Phone />}
+                        label="Phone"
+                        value={employee.phone_num}
+                      />
+
+                      <InfoRow
+                        icon={<Calendar />}
+                        label="Date of Joining"
+                        value={formatDate(employee.date_of_joining)}
+                      />
+
+                      <InfoRow
+                        icon={<Calendar />}
+                        label="Date of Birth"
+                        value={formatDate(employee.date_of_birth)}
+                      />
+
+                      <InfoRow
+                        icon={<Globe />}
+                        label="Nationality"
+                        value={employee.nationality}
+                      />
+
+                      <InfoRow
+                        icon={<IdCard />}
+                        label="Passport"
+                        value={employee.passport_no}
+                      />
+
+                      <InfoRow
+                        icon={<FileText />}
+                        label="Visa Number"
+                        value={employee.visa_no}
+                      />
+
+                      <InfoRow
+                        icon={<FileText />}
+                        label="FRRO Registration"
+                        value={employee.frro_reg_no}
+                      />
+
+                      <InfoRow
+                        icon={<BadgeCheck />}
+                        label="Tax Residency"
+                        value={employee.tax_residency_status}
+                      />
+
+                      <InfoRow
+                        icon={<FileText />}
+                        label="IW / SSA Status"
+                        value={employee.iw_ssa_status}
+                      />
+                    </div>
+
+                    {/* Bank Details */}
+                    <SectionTitle
+                      icon={<Building2 className="h-4 w-4" />}
+                      title="Bank Details"
+                    />
+
+                    <div className="mt-3 space-y-3">
+                      <InfoRow
+                        icon={<Building2 />}
+                        label="Bank Name"
+                        value={employee.bank}
+                      />
+
+                      <InfoRow
+                        icon={<CreditCard />}
+                        label="Account Number"
+                        value={maskAccountNumber(employee.bank_acc_num)}
+                      />
+
+                      <InfoRow
+                        icon={<FileText />}
+                        label="IFSC Code"
+                        value={employee.bank_ifsc}
+                      />
+
+                      <InfoRow
+                        icon={<IdCard />}
+                        label="PAN Number"
+                        value={employee.pan_num}
+                      />
+
+                      <InfoRow
+                        icon={<FileText />}
+                        label="Employer TAN"
+                        value={employee.employer_tan}
+                      />
+                    </div>
+
+                    {/* Footer */}
+                    <div className="mt-5 flex items-center justify-between border-t border-white/10 pt-4">
+                      <span className="text-xs text-gray-500">
+                        Created {formatDate(employee.created_at)}
+                      </span>
+
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                          employee.email_verified
+                            ? "bg-green-500/10 text-green-400"
+                            : "bg-yellow-500/10 text-yellow-400"
+                        }`}
+                      >
+                        {employee.email_verified ? "Verified" : "Pending"}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
-
-              {/* Employee ID */}
-              <div className="mt-4 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
-                <p className="text-xs text-gray-500">Employee ID</p>
-                <p className="mt-1 break-all font-mono text-sm text-gray-200">
-                  {employee.employee_id || "Not provided"}
-                </p>
-              </div>
-
-              {/* Employee Information */}
-              <SectionTitle
-                icon={<UserRound className="h-4 w-4" />}
-                title="Employee Information"
-              />
-
-              <div className="mt-3 space-y-3">
-                <InfoRow icon={<Mail />} label="Email" value={employee.email} />
-
-                <InfoRow
-                  icon={<Phone />}
-                  label="Phone"
-                  value={employee.phone_num}
-                />
-
-                <InfoRow
-                  icon={<Calendar />}
-                  label="Date of Joining"
-                  value={formatDate(employee.date_of_joining)}
-                />
-
-                <InfoRow
-                  icon={<Calendar />}
-                  label="Date of Birth"
-                  value={formatDate(employee.date_of_birth)}
-                />
-
-                <InfoRow
-                  icon={<Globe />}
-                  label="Nationality"
-                  value={employee.nationality}
-                />
-
-                <InfoRow
-                  icon={<IdCard />}
-                  label="Passport"
-                  value={employee.passport_no}
-                />
-
-                <InfoRow
-                  icon={<FileText />}
-                  label="Visa Number"
-                  value={employee.visa_no}
-                />
-
-                <InfoRow
-                  icon={<FileText />}
-                  label="FRRO Registration"
-                  value={employee.frro_reg_no}
-                />
-
-                <InfoRow
-                  icon={<BadgeCheck />}
-                  label="Tax Residency"
-                  value={employee.tax_residency_status}
-                />
-
-                <InfoRow
-                  icon={<FileText />}
-                  label="IW / SSA Status"
-                  value={employee.iw_ssa_status}
-                />
-              </div>
-
-              {/* Bank Details */}
-              <SectionTitle
-                icon={<Building2 className="h-4 w-4" />}
-                title="Bank Details"
-              />
-
-              <div className="mt-3 space-y-3">
-                <InfoRow
-                  icon={<Building2 />}
-                  label="Bank Name"
-                  value={employee.bank}
-                />
-
-                <InfoRow
-                  icon={<CreditCard />}
-                  label="Account Number"
-                  value={maskAccountNumber(employee.bank_acc_num)}
-                />
-
-                <InfoRow
-                  icon={<FileText />}
-                  label="IFSC Code"
-                  value={employee.bank_ifsc}
-                />
-
-                <InfoRow
-                  icon={<IdCard />}
-                  label="PAN Number"
-                  value={employee.pan_num}
-                />
-
-                <InfoRow
-                  icon={<FileText />}
-                  label="Employer TAN"
-                  value={employee.employer_tan}
-                />
-              </div>
-
-              {/* Footer */}
-              <div className="mt-5 flex items-center justify-between border-t border-white/10 pt-4">
-                <span className="text-xs text-gray-500">
-                  Created {formatDate(employee.created_at)}
-                </span>
-
-                <span
-                  className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                    employee.email_verified
-                      ? "bg-green-500/10 text-green-400"
-                      : "bg-yellow-500/10 text-yellow-400"
-                  }`}
-                >
-                  {employee.email_verified ? "Verified" : "Pending"}
-                </span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : null}
 
