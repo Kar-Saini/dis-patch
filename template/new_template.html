@@ -40,20 +40,20 @@
         overflow: hidden;
       }
 
-      /* Company Header */
-      /* Company Header */
+      /* =========================================
+     COMPANY HEADER - 200PX BANNER
+  ========================================= */
 
       .letterhead {
         position: absolute;
         left: 63px;
         top: 48px;
         width: 797px;
-        height: 90px;
+        height: 200px;
         overflow: hidden;
         background: #e9ebef;
       }
 
-      /* Dynamic Company Banner */
       .letterhead-image {
         position: absolute;
         inset: 0;
@@ -64,7 +64,6 @@
         z-index: 0;
       }
 
-      /* Dark overlay for readable company name */
       .letterhead::after {
         content: "";
         position: absolute;
@@ -77,7 +76,6 @@
         z-index: 1;
       }
 
-      /* Dynamic Company Name */
       .company {
         position: absolute;
         left: 18px;
@@ -85,7 +83,6 @@
         top: 50%;
         transform: translateY(-50%);
         z-index: 2;
-
         font-size: 22px;
         font-weight: 800;
         letter-spacing: 0.8px;
@@ -114,12 +111,14 @@
         object-fit: contain;
       }
 
-      /* Employee Summary */
+      /* =========================================
+     EMPLOYEE SUMMARY
+  ========================================= */
 
       .summary {
         position: absolute;
         left: 63px;
-        top: 160px;
+        top: 260px;
         width: 798px;
         height: 276px;
         border: 1px solid #c8c8c8;
@@ -200,18 +199,22 @@
         right: 8px;
       }
 
-      /* Currency Note */
+      /* =========================================
+     CURRENCY NOTE
+  ========================================= */
 
       .inr {
         position: absolute;
         right: 62px;
-        top: 439px;
+        top: 539px;
         font-size: 12px;
         font-weight: 700;
         font-style: italic;
       }
 
-      /* Section Labels */
+      /* =========================================
+     SECTION LABELS
+  ========================================= */
 
       .label {
         position: absolute;
@@ -219,13 +222,29 @@
         font-weight: 700;
       }
 
-      /* Earnings, Deductions and Arrears Tables */
+      /* Shift original inline-positioned labels by 100px */
+
+      .label[style*="top: 473px"],
+      .label[style*="top: 646px"] {
+        transform: translateY(100px);
+      }
+
+      /* =========================================
+     EARNINGS, DEDUCTIONS & ARREARS TABLES
+  ========================================= */
 
       .tbl {
         position: absolute;
         border: 1px solid #c8c8c8;
         font-size: 13px;
         background: #fff;
+      }
+
+      /* Shift original inline-positioned tables by 100px */
+
+      .tbl[style*="top: 493px"],
+      .tbl[style*="top: 666px"] {
+        transform: translateY(100px);
       }
 
       .tbl .hd {
@@ -271,12 +290,14 @@
         right: 12px;
       }
 
-      /* Bank and Tax Details */
+      /* =========================================
+     BANK AND TAX DETAILS
+  ========================================= */
 
       .bank {
         position: absolute;
         left: 468px;
-        top: 493px;
+        top: 593px;
         width: 392px;
         height: 136px;
         border: 1px solid #c8c8c8;
@@ -292,12 +313,14 @@
         text-overflow: ellipsis;
       }
 
-      /* Net Payable */
+      /* =========================================
+     NET PAYABLE
+  ========================================= */
 
       .net {
         position: absolute;
         left: 63px;
-        top: 855px;
+        top: 955px;
         width: 802px;
         height: 88px;
         border: 1.5px dashed #00bf63;
@@ -325,17 +348,23 @@
         color: #666;
       }
 
-      /* Footer */
+      /* =========================================
+     FOOTER
+  ========================================= */
 
       .foot {
         position: absolute;
         left: 0;
         right: 0;
-        top: 964px;
+        top: 1064px;
         text-align: center;
         font-size: 12px;
         color: #666;
       }
+
+      /* =========================================
+     PRINT
+  ========================================= */
 
       @media print {
         html,
