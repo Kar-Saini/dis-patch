@@ -41,25 +41,60 @@
       }
 
       /* Company Header */
+      /* Company Header */
 
       .letterhead {
         position: absolute;
         left: 63px;
         top: 48px;
         width: 797px;
-        height: 81px;
+        height: 90px;
+        overflow: hidden;
         background: #e9ebef;
       }
 
+      /* Dynamic Company Banner */
+      .letterhead-image {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+        z-index: 0;
+      }
+
+      /* Dark overlay for readable company name */
+      .letterhead::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          to right,
+          rgba(0, 0, 0, 0.55),
+          rgba(0, 0, 0, 0.15)
+        );
+        z-index: 1;
+      }
+
+      /* Dynamic Company Name */
       .company {
         position: absolute;
-        left: 78px;
-        top: 62px;
-        font-size: 19px;
+        left: 18px;
+        right: 18px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 2;
+
+        font-size: 22px;
         font-weight: 800;
-        letter-spacing: 0.4px;
-        color: #12909a;
+        letter-spacing: 0.8px;
+        color: #ffffff;
+        text-transform: uppercase;
+        text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
         white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .company-address {
@@ -320,11 +355,17 @@
     <div class="page">
       <!-- Company Header -->
 
-      <div class="letterhead"></div>
+      <!-- Dynamic Company Header -->
 
-      <div class="company"></div>
+      <div class="letterhead">
+        <img
+          src="{{company_banner}}"
+          alt="Company Banner"
+          class="letterhead-image"
+        />
 
-      <div class="company-address"></div>
+        <div class="company">{{company_name}}</div>
+      </div>
 
       <!-- Employee Summary -->
 

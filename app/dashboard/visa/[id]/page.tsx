@@ -13,9 +13,11 @@ import {
   PlaneLanding,
   PlaneTakeoff,
 } from "lucide-react";
-import getVisaPerson, { VisaPersonDetail } from "@/app/action/getVisaPerson";
-import { VisaPersonForm } from "@/components/VisaPersonForm";
-import { VisaLogList } from "@/components/VisaLogList";
+import getVisaPerson, {
+  VisaPersonDetail,
+} from "@/app/action/visa/getVisaPerson";
+import { VisaPersonForm } from "@/components/visa/VisaPersonForm";
+import { VisaLogList } from "@/components/visa/VisaLogList";
 import {
   VISA_LEVEL_STYLES,
   VISA_STAY_LIMIT_DAYS,
@@ -161,10 +163,7 @@ export default function VisaPersonPage() {
                   : "text-white"
             }
           />
-          <Stat
-            label="Must exit by"
-            value={formatVisaDate(status.limitDate)}
-          />
+          <Stat label="Must exit by" value={formatVisaDate(status.limitDate)} />
           <Stat
             label="Days stayed"
             value={`${status.daysStayed} ${status.daysStayed === 1 ? "day" : "days"}`}
@@ -207,7 +206,9 @@ export default function VisaPersonPage() {
 
           {person.exit_date && !status.hasDeparted && (
             <Row
-              icon={<CalendarClock className="w-4 h-4 text-gray-500 shrink-0" />}
+              icon={
+                <CalendarClock className="w-4 h-4 text-gray-500 shrink-0" />
+              }
               label="Departs in"
               value={`${status.daysUntilExit} ${status.daysUntilExit === 1 ? "day" : "days"}`}
             />
@@ -228,7 +229,8 @@ export default function VisaPersonPage() {
             History
           </h2>
           <span className="text-xs text-gray-500">
-            {person.logs.length} {person.logs.length === 1 ? "entry" : "entries"}
+            {person.logs.length}{" "}
+            {person.logs.length === 1 ? "entry" : "entries"}
           </span>
         </div>
 

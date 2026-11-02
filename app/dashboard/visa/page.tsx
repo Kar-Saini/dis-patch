@@ -12,9 +12,12 @@ import {
   Plus,
 } from "lucide-react";
 import { VisaPerson } from "@prisma/client";
-import getAllVisaPersons from "@/app/action/getAllVisaPersons";
-import { VisaPersonForm } from "@/components/VisaPersonForm";
-import { VisaAttentionPanel, VisaRow } from "@/components/VisaAttentionPanel";
+import getAllVisaPersons from "@/app/action/visa/getAllVisaPersons";
+import { VisaPersonForm } from "@/components/visa/VisaPersonForm";
+import {
+  VisaAttentionPanel,
+  VisaRow,
+} from "@/components/visa/VisaAttentionPanel";
 import {
   VISA_LEVEL_STYLES,
   VISA_STAY_LIMIT_DAYS,

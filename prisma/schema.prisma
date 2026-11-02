@@ -6,13 +6,38 @@ datasource db {
   provider = "postgresql"
 }
 
+// ==========================================
+// COMPANY
+// ==========================================
+
+model Company {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+
+  logoUrl   String?
+  bannerUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  employees   Employee[]
+  payslipLogs PayslipLog[]
+
+  @@index([name])
+}
+
+// ==========================================
+// EMPLOYEE
+// ==========================================
+
 model Employee {
   id             String   @id @unique @default(cuid())
 
   // Employee Information
   name           String
   employee_id    String?  @unique
-  email          String   @unique
+  email          String
   designation    String
   email_verified Boolean  @default(false)
   phone_num      String
@@ -20,28 +45,42 @@ model Employee {
   date_of_joining DateTime? @db.Date
 
   // Personal & Identification Details
-  passport_no         String?
-  date_of_birth       DateTime? @db.Date
-  nationality         String?
-  visa_no             String?
-  frro_reg_no         String?
+  passport_no          String?
+  date_of_birth        DateTime? @db.Date
+  nationality          String?
+  visa_no              String?
+  frro_reg_no          String?
   tax_residency_status String?
-  iw_ssa_status       String?
+  iw_ssa_status        String?
 
   // Bank & Tax Details
-  bank          String
-  bank_acc_num  String
-  bank_ifsc     String
-  pan_num       String
-  employer_tan  String?
+  bank         String
+  bank_acc_num String
+  bank_ifsc    String
+  pan_num      String
+  employer_tan String?
+
+  // Company Reference
+  // Optional temporarily for migration of existing employees.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   // Timestamps
-  created_at    DateTime @default(now())
-  updated_at    DateTime @default(now()) @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
 
   // Relations
-  payslips      PayslipLog[]
+  payslips PayslipLog[]
+
+  // Email must be unique within a company, not globally.
+  @@unique([companyId, email])
+
+  @@index([companyId])
 }
+
+// ==========================================
+// ADMIN
+// ==========================================
 
 model Admin {
   id         String   @id @default(cuid())
@@ -50,6 +89,10 @@ model Admin {
   email      String   @unique
   created_at DateTime @default(now())
 }
+
+// ==========================================
+// VISA PERSON
+// ==========================================
 
 model VisaPerson {
   id           String    @id @default(cuid())
@@ -60,11 +103,16 @@ model VisaPerson {
   exit_date    DateTime? @db.Date
   created_at   DateTime  @default(now())
   updated_at   DateTime  @default(now()) @updatedAt
-  logs         VisaLog[]
+
+  logs VisaLog[]
 
   @@index([passport_num])
   @@index([entry_date])
 }
+
+// ==========================================
+// VISA LOG
+// ==========================================
 
 model VisaLog {
   id           String     @id @default(cuid())
@@ -84,16 +132,35 @@ enum VisaAction {
   UPDATED
 }
 
+// ==========================================
+// PAYSLIP HISTORY
+// ==========================================
+
 model PayslipLog {
   id         String      @id @default(cuid())
+
   employeeId String
   employee   Employee    @relation(fields: [employeeId], references: [id])
-  month      Int
-  year       Int
-  status     EmailStatus @default(PENDING)
-  messageId  String?
-  createdAt  DateTime    @default(now())
+
+  // Company Reference
+  // Optional temporarily for migration of existing history.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
+  month     Int
+  year      Int
+  status    EmailStatus @default(PENDING)
+  messageId String?
+  createdAt DateTime    @default(now())
+
+  @@index([employeeId])
+  @@index([companyId])
+  @@index([companyId, year, month])
 }
+
+// ==========================================
+// ENUMS
+// ==========================================
 
 enum EmailStatus {
   PENDING

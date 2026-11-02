@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { AlertCircle, X } from "lucide-react";
 import { VisaPerson } from "@prisma/client";
-import addVisaPerson from "@/app/action/addVisaPerson";
-import updateVisaPerson from "@/app/action/updateVisaPerson";
+import addVisaPerson from "@/app/action/visa/addVisaPerson";
+import updateVisaPerson from "@/app/action/visa/updateVisaPerson";
 import { VISA_STAY_LIMIT_DAYS, toVisaDateInput } from "@/lib/visa";
 
 interface VisaPersonFormProps {

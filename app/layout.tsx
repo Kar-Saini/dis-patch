@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/lib/authContext";
 import { Anta } from "next/font/google";
+import { ThemeProvider } from "next-themes";
 
 const anta = Anta({ weight: "400", subsets: ["latin"] });
 
@@ -29,7 +30,6 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  colorScheme: "dark",
   themeColor: [{ media: "(prefers-color-scheme: dark)", color: "#0f172a" }],
 };
 
@@ -39,9 +39,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="bg-[#0a0512]">
-      <body className={`${anta.className} antialiased bg-[#0a0512]`}>
-        <AuthProvider>{children}</AuthProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className={`${anta.className} antialiased bg-background text-foreground`}
+      >
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem={false}
+          disableTransitionOnChange
+        >
+          <AuthProvider>{children}</AuthProvider>
+        </ThemeProvider>
+
         {process.env.NODE_ENV === "production" && <Analytics />}
       </body>
     </html>

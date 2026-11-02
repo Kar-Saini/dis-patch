@@ -9,8 +9,8 @@ import {
   Clock3,
   FileText,
 } from "lucide-react";
-import { getVisaLogs } from "@/app/action/getVisaLogs";
-import { VisaLogList } from "@/components/VisaLogList";
+import { getVisaLogs } from "@/app/action/visa/getVisaLogs";
+import { VisaLogList } from "@/components/visa/VisaLogList";
 
 type VisaLogItem = Prisma.VisaLogGetPayload<{
   include: {

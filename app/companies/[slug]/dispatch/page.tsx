@@ -12,37 +12,38 @@ import {
   X,
   Coffee,
 } from "lucide-react";
-import { Employee } from "@prisma/client";
-import getAllEmployees from "@/app/action/getAllEmployees";
+import type { Employee } from "@prisma/client";
+import getAllEmployees from "@/app/action/employee/getAllEmployeesByCompany";
 import { sendSalaryEmail } from "@/app/action/sendEmail";
+import getAllEmployeesByCompany from "@/app/action/employee/getAllEmployeesByCompany";
+import { useParams } from "next/navigation";
 
 type DayStatus = "working" | "off" | "leave";
-
 type CalendarStatus = Record<string, DayStatus>;
 
 const STATUS_CONFIG = {
   working: {
     label: "Working",
-    dot: "bg-emerald-400",
-    text: "text-emerald-400",
-    bg: "bg-emerald-400/10",
-    border: "border-emerald-400/20",
+    dot: "bg-emerald-500 dark:bg-emerald-400",
+    text: "text-emerald-700 dark:text-emerald-400",
+    bg: "bg-emerald-50 dark:bg-emerald-400/10",
+    border: "border-emerald-200 dark:border-emerald-400/20",
     icon: Check,
   },
   off: {
     label: "Off",
-    dot: "bg-red-400",
-    text: "text-red-400",
-    bg: "bg-red-400/10",
-    border: "border-red-400/20",
+    dot: "bg-red-500 dark:bg-red-400",
+    text: "text-red-700 dark:text-red-400",
+    bg: "bg-red-50 dark:bg-red-400/10",
+    border: "border-red-200 dark:border-red-400/20",
     icon: X,
   },
   leave: {
     label: "Leave",
-    dot: "bg-amber-400",
-    text: "text-amber-400",
-    bg: "bg-amber-400/10",
-    border: "border-amber-400/20",
+    dot: "bg-amber-500 dark:bg-amber-400",
+    text: "text-amber-700 dark:text-amber-400",
+    bg: "bg-amber-50 dark:bg-amber-400/10",
+    border: "border-amber-200 dark:border-amber-400/20",
     icon: Coffee,
   },
 } as const;
@@ -162,37 +163,37 @@ function WorkCalendar({
 
   return (
     <div className="relative">
-      {/* Trigger */}
+      {/* Calendar Trigger */}
       <button
         type="button"
         onClick={() => {
           setOpen((value) => !value);
           setSelectedDay(null);
         }}
-        className="flex w-full items-center justify-between rounded-lg border border-white/[0.09] bg-white/[0.035] px-3 py-2.5 text-left transition hover:border-white/[0.16] hover:bg-white/[0.05]"
+        className="flex w-full items-center justify-between rounded-lg border border-border bg-card px-3 py-2.5 text-left text-foreground transition hover:border-ring hover:bg-muted"
       >
         <div className="flex items-center gap-2.5">
-          <div className="flex h-11 w-8 items-center justify-center rounded-lg bg-white/[0.07]">
-            <CalendarDays className="h-3.5 w-3.5 text-white/60" />
+          <div className="flex h-11 w-8 items-center justify-center rounded-lg bg-muted">
+            <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
           </div>
 
           <div>
-            <p className="text-xs font-medium text-white">{monthLabel}</p>
+            <p className="text-xs font-medium text-foreground">{monthLabel}</p>
 
             <div className="mt-0.5 flex items-center gap-2.5 text-[9px]">
-              <span className="flex items-center gap-1 text-emerald-400/80">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
                 {counts.working}
               </span>
 
-              <span className="flex items-center gap-1 text-red-400/80">
-                <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
+              <span className="flex items-center gap-1 text-red-700 dark:text-red-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-red-500 dark:bg-red-400" />
                 {counts.off}
               </span>
 
               {counts.leave > 0 && (
-                <span className="flex items-center gap-1 text-amber-400/80">
-                  <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                <span className="flex items-center gap-1 text-amber-700 dark:text-amber-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500 dark:bg-amber-400" />
                   {counts.leave}
                 </span>
               )}
@@ -200,12 +201,12 @@ function WorkCalendar({
           </div>
         </div>
 
-        <span className="text-[10px] text-white/25">
+        <span className="text-[10px] text-muted-foreground">
           {open ? "Close" : "Edit"}
         </span>
       </button>
 
-      {/* Dropdown */}
+      {/* Calendar Dropdown */}
       {open && (
         <>
           <div
@@ -216,32 +217,34 @@ function WorkCalendar({
             }}
           />
 
-          <div className="absolute left-0 top-[calc(100%+6px)] z-50 w-full max-w-[340px] rounded-xl border border-white/[0.1] bg-[#0b0b0b] p-3 shadow-2xl shadow-black/50">
+          <div className="absolute left-0 top-[calc(100%+6px)] z-50 w-full max-w-[340px] rounded-xl border border-border bg-popover p-3 text-popover-foreground shadow-2xl">
             {/* Header */}
             <div className="mb-3 flex items-center justify-between">
               <button
                 type="button"
                 onClick={() => changeMonth(-1)}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-white/35 transition hover:bg-white/[0.07] hover:text-white"
+                aria-label="Previous month"
+                className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-accent hover:text-accent-foreground"
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
               </button>
 
-              <div className="text-xs font-semibold text-white">
+              <div className="text-xs font-semibold text-popover-foreground">
                 {monthLabel}
               </div>
 
               <button
                 type="button"
                 onClick={() => changeMonth(1)}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-white/35 transition hover:bg-white/[0.07] hover:text-white"
+                aria-label="Next month"
+                className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-accent hover:text-accent-foreground"
               >
                 <ChevronRight className="h-3.5 w-3.5" />
               </button>
             </div>
 
             {/* Legend */}
-            <div className="mb-3 flex items-center justify-center gap-3 border-b border-white/[0.06] pb-2.5">
+            <div className="mb-3 flex items-center justify-center gap-3 border-b border-border pb-2.5">
               {(
                 Object.entries(STATUS_CONFIG) as [
                   DayStatus,
@@ -263,7 +266,7 @@ function WorkCalendar({
               {["M", "T", "W", "T", "F", "S", "S"].map((day, index) => (
                 <div
                   key={`${day}-${index}`}
-                  className="py-1 text-center text-[8px] font-medium uppercase text-white/20"
+                  className="py-1 text-center text-[8px] font-medium uppercase text-muted-foreground"
                 >
                   {day}
                 </div>
@@ -296,13 +299,19 @@ function WorkCalendar({
                     <button
                       type="button"
                       onClick={() => handleDayClick(day)}
+                      aria-label={`${day} ${monthLabel}, ${dayStatus}`}
+                      aria-pressed={isSelected}
                       className={`relative flex h-8 w-full flex-col items-center justify-center rounded-md transition ${
-                        isSelected ? "bg-white/[0.1]" : "hover:bg-white/[0.05]"
+                        isSelected
+                          ? "bg-accent text-accent-foreground"
+                          : "text-foreground hover:bg-accent"
                       }`}
                     >
                       <span
                         className={`text-[10px] ${
-                          isToday ? "font-bold text-white" : "text-white/55"
+                          isToday
+                            ? "font-bold text-foreground"
+                            : "text-foreground/70"
                         }`}
                       >
                         {day}
@@ -313,13 +322,13 @@ function WorkCalendar({
                       />
 
                       {isToday && (
-                        <span className="absolute right-0.5 top-0.5 h-0.5 w-0.5 rounded-full bg-white" />
+                        <span className="absolute right-0.5 top-0.5 h-0.5 w-0.5 rounded-full bg-foreground" />
                       )}
                     </button>
 
-                    {/* Status selector */}
+                    {/* Status Selector */}
                     {isSelected && (
-                      <div className="absolute left-1/2 top-[calc(100%+3px)] z-50 w-28 -translate-x-1/2 overflow-hidden rounded-lg border border-white/[0.1] bg-[#111] p-1 shadow-xl shadow-black/50">
+                      <div className="absolute left-1/2 top-[calc(100%+3px)] z-50 w-28 -translate-x-1/2 overflow-hidden rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-xl">
                         {(
                           Object.entries(STATUS_CONFIG) as [
                             DayStatus,
@@ -336,7 +345,7 @@ function WorkCalendar({
                               className={`flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-[9px] transition ${
                                 dayStatus === key
                                   ? `${option.bg} ${option.text}`
-                                  : "text-white/40 hover:bg-white/[0.06] hover:text-white"
+                                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                               }`}
                             >
                               <span
@@ -359,8 +368,8 @@ function WorkCalendar({
             </div>
 
             {/* Footer */}
-            <div className="mt-3 border-t border-white/[0.06] pt-2">
-              <p className="text-center text-[9px] text-white/20">
+            <div className="mt-3 border-t border-border pt-2">
+              <p className="text-center text-[9px] text-muted-foreground">
                 Click a date to change its status
               </p>
             </div>
@@ -370,6 +379,7 @@ function WorkCalendar({
     </div>
   );
 }
+
 /* -------------------------------------------------------------------------- */
 /* Dispatch Page                                                               */
 /* -------------------------------------------------------------------------- */
@@ -420,10 +430,11 @@ export default function DispatchPage() {
   /* ------------------------------------------------------------------------ */
   /* Load employees                                                            */
   /* ------------------------------------------------------------------------ */
-
+  const params = useParams<{ slug: string }>();
+  const slug = params.slug;
   useEffect(() => {
     (async () => {
-      const allEmployees = await getAllEmployees();
+      const allEmployees = await getAllEmployeesByCompany(slug);
 
       if (typeof allEmployees !== "string") {
         setEmployees(allEmployees);
@@ -466,7 +477,7 @@ export default function DispatchPage() {
   };
 
   /* ------------------------------------------------------------------------ */
-  /* Calendar                                                                   */
+  /* Calendar                                                                  */
   /* ------------------------------------------------------------------------ */
 
   const handleCalendarStatusChange = (dateKey: string, status: DayStatus) => {
@@ -489,7 +500,7 @@ export default function DispatchPage() {
   };
 
   /* ------------------------------------------------------------------------ */
-  /* Send                                                                       */
+  /* Send                                                                      */
   /* ------------------------------------------------------------------------ */
 
   const handleSendEmail = async () => {
@@ -508,6 +519,7 @@ export default function DispatchPage() {
 
     try {
       const res = await sendSalaryEmail({
+        slug,
         employeeEmails: Array.from(selectedEmployees),
         monthAndYear,
         subject,
@@ -543,21 +555,21 @@ export default function DispatchPage() {
     selectedEmployees.size === employees.length && employees.length > 0;
 
   return (
-    <div className="w-full space-y-8">
+    <div className="w-full space-y-8 text-foreground">
       {/* ------------------------------------------------------------------ */}
       {/* Header                                                              */}
       {/* ------------------------------------------------------------------ */}
 
       <div>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/25">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
           Payslip
         </p>
 
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white">
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
           Dispatch Email
         </h1>
 
-        <p className="mt-1.5 text-sm text-white/35">
+        <p className="mt-1.5 text-sm text-muted-foreground">
           Send salary slips to selected employees
         </p>
       </div>
@@ -567,10 +579,12 @@ export default function DispatchPage() {
       {/* ------------------------------------------------------------------ */}
 
       {sentMessage && (
-        <div className="flex items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.07] p-3">
-          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+        <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-500/20 dark:bg-emerald-500/[0.07]">
+          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-400" />
 
-          <p className="text-sm text-emerald-400">{sentMessage}</p>
+          <p className="text-sm text-emerald-700 dark:text-emerald-400">
+            {sentMessage}
+          </p>
         </div>
       )}
 
@@ -584,32 +598,34 @@ export default function DispatchPage() {
         {/* ---------------------------------------------------------------- */}
 
         <div className="lg:col-span-1">
-          <div className="rounded-xl border border-white/[0.08] bg-white/[0.025] p-4">
+          <div className="rounded-xl border border-border bg-card p-4 text-card-foreground">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h2 className="text-sm font-semibold text-white">Recipients</h2>
+                <h2 className="text-sm font-semibold text-card-foreground">
+                  Recipients
+                </h2>
 
-                <p className="mt-0.5 text-xs text-white/30">
+                <p className="mt-0.5 text-xs text-muted-foreground">
                   {selectedEmployees.size} selected
                 </p>
               </div>
 
-              <span className="rounded-full bg-white/[0.06] px-2 py-1 text-[10px] text-white/40">
+              <span className="rounded-full bg-muted px-2 py-1 text-[10px] text-muted-foreground">
                 {employees.length} total
               </span>
             </div>
 
             {/* Select all */}
-            <div className="mb-3 border-b border-white/[0.07] pb-3">
-              <label className="group flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-2 transition hover:bg-white/[0.04]">
+            <div className="mb-3 border-b border-border pb-3">
+              <label className="group flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-2 transition hover:bg-muted">
                 <input
                   type="checkbox"
                   checked={allSelected}
                   onChange={handleSelectAll}
-                  className="h-4 w-4 rounded accent-white"
+                  className="h-4 w-4 rounded accent-foreground"
                 />
 
-                <span className="text-xs font-medium text-white/70 transition group-hover:text-white">
+                <span className="text-xs font-medium text-foreground/80 transition group-hover:text-foreground">
                   Select All
                 </span>
               </label>
@@ -624,22 +640,22 @@ export default function DispatchPage() {
                   <label
                     key={employee.id}
                     className={`group flex cursor-pointer items-start gap-2.5 rounded-lg px-2.5 py-2.5 transition ${
-                      selected ? "bg-white/[0.06]" : "hover:bg-white/[0.035]"
+                      selected ? "bg-accent" : "hover:bg-muted/60"
                     }`}
                   >
                     <input
                       type="checkbox"
                       checked={selected}
                       onChange={() => handleSelectEmployee(employee.email)}
-                      className="mt-0.5 h-4 w-4 shrink-0 rounded accent-white"
+                      className="mt-0.5 h-4 w-4 shrink-0 rounded accent-foreground"
                     />
 
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-medium text-white/80 transition group-hover:text-white">
+                      <p className="truncate text-xs font-medium text-foreground transition group-hover:text-foreground">
                         {employee.name}
                       </p>
 
-                      <p className="mt-0.5 truncate text-[11px] text-white/30">
+                      <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
                         {employee.email}
                       </p>
                     </div>
@@ -649,7 +665,9 @@ export default function DispatchPage() {
 
               {employees.length === 0 && (
                 <div className="py-8 text-center">
-                  <p className="text-xs text-white/25">No employees found</p>
+                  <p className="text-xs text-muted-foreground">
+                    No employees found
+                  </p>
                 </div>
               )}
             </div>
@@ -662,8 +680,8 @@ export default function DispatchPage() {
 
         <div className="space-y-4 lg:col-span-2">
           {/* Send month */}
-          <div className="rounded-xl border border-white/[0.08] bg-white/[0.025] p-4">
-            <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.16em] text-white/30">
+          <div className="rounded-xl border border-border bg-card p-4 text-card-foreground">
+            <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
               Send Month
             </label>
 
@@ -677,39 +695,45 @@ export default function DispatchPage() {
 
             {/* Working, off, and leave day summary */}
             <div className="mt-3 grid grid-cols-3 gap-2">
-              <div className="rounded-lg bg-emerald-400/10 p-3">
-                <p className="text-xs text-emerald-400">Working Days</p>
-                <p className="mt-1 text-lg font-semibold text-white">
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-400/20 dark:bg-emerald-400/10">
+                <p className="text-xs text-emerald-700 dark:text-emerald-400">
+                  Working Days
+                </p>
+                <p className="mt-1 text-lg font-semibold text-foreground">
                   {workingDays}
                 </p>
               </div>
 
-              <div className="rounded-lg bg-red-400/10 p-3">
-                <p className="text-xs text-red-400">Off Days</p>
-                <p className="mt-1 text-lg font-semibold text-white">
+              <div className="rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-400/20 dark:bg-red-400/10">
+                <p className="text-xs text-red-700 dark:text-red-400">
+                  Off Days
+                </p>
+                <p className="mt-1 text-lg font-semibold text-foreground">
                   {offDays}
                 </p>
               </div>
 
-              <div className="rounded-lg bg-amber-400/10 p-3">
-                <p className="text-xs text-amber-400">Leave Days</p>
-                <p className="mt-1 text-lg font-semibold text-white">
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-400/20 dark:bg-amber-400/10">
+                <p className="text-xs text-amber-700 dark:text-amber-400">
+                  Leave Days
+                </p>
+                <p className="mt-1 text-lg font-semibold text-foreground">
                   {leaveDays}
                 </p>
               </div>
             </div>
 
-            <p className="mt-2 text-xs text-white/25">
+            <p className="mt-2 text-xs text-muted-foreground">
               Email will be logged for{" "}
-              <span className="text-white/45">
+              <span className="font-medium text-foreground">
                 {monthAndYear.month} {monthAndYear.year}
               </span>
             </p>
           </div>
 
           {/* Subject */}
-          <div className="rounded-xl border border-white/[0.08] bg-white/[0.025] p-4">
-            <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.16em] text-white/30">
+          <div className="rounded-xl border border-border bg-card p-4 text-card-foreground">
+            <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
               Subject
             </label>
 
@@ -718,19 +742,20 @@ export default function DispatchPage() {
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="Enter email subject"
-              className="w-full rounded-lg border border-white/[0.09] bg-white/[0.035] px-3 py-2.5 text-sm text-white placeholder-white/20 outline-none transition focus:border-white/20 focus:bg-white/[0.05]"
+              className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-ring focus:ring-1 focus:ring-ring"
             />
           </div>
 
           {/* Send button */}
           <button
+            type="button"
             onClick={handleSendEmail}
             disabled={isSending || selectedEmployees.size === 0}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-foreground px-4 py-3 text-sm font-semibold text-background transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isSending ? (
               <>
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-black/30 border-t-black" />
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-background/30 border-t-background" />
                 Sending...
               </>
             ) : (
@@ -743,10 +768,10 @@ export default function DispatchPage() {
 
           {/* Empty selection warning */}
           {selectedEmployees.size === 0 && (
-            <div className="flex items-start gap-2.5 rounded-xl border border-blue-500/20 bg-blue-500/[0.06] p-3">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-blue-400" />
+            <div className="flex items-start gap-2.5 rounded-xl border border-blue-200 bg-blue-50 p-3 dark:border-blue-500/20 dark:bg-blue-500/[0.06]">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-blue-700 dark:text-blue-400" />
 
-              <p className="text-xs text-blue-400/80">
+              <p className="text-xs text-blue-700 dark:text-blue-400">
                 Select employees to send salary slips.
               </p>
             </div>

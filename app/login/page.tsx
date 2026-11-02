@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/authContext";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Mail, Lock, AlertCircle } from "lucide-react";
 
 export default function LoginPage() {
@@ -10,6 +11,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
   const { login } = useAuth();
   const router = useRouter();
 
@@ -21,41 +23,57 @@ export default function LoginPage() {
     try {
       await login(email, password);
       router.push("/");
-    } catch (err) {
-      setError("Invalid email or password. Try admin@company.com / admin123");
+    } catch {
+      setError("Invalid email or password. Try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4">
+    <div className="relative flex min-h-screen items-center justify-center bg-background p-4 text-foreground transition-colors duration-200">
+      {/* Theme Toggle - Top Right */}
+      <div className="absolute right-4 top-4 z-10 w-36 sm:right-6 sm:top-6">
+        <ThemeToggle />
+      </div>
+
       <div className="w-full max-w-md">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-black border border-white rounded-lg mb-4">
-            <Mail className="w-7 h-7 text-white" />
+        <div className="mb-8 text-center">
+          <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-xl border border-border bg-primary shadow-lg">
+            <Mail className="h-7 w-7 text-primary-foreground" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-1">MailDispatch</h1>
-          <p className="text-sm text-gray-400">Employee Email Management</p>
+
+          <h1 className="mb-1 text-3xl font-bold tracking-tight text-foreground">
+            Dispatch
+          </h1>
+
+          <p className="text-sm text-muted-foreground">Management Portal</p>
         </div>
 
         {/* Form Card */}
-        <div className="bg-white/5 backdrop-blur border border-white/10 rounded-lg p-6">
+        <div className="rounded-xl border border-border bg-card p-6 text-card-foreground shadow-xl">
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email Field */}
             <div>
-              <label className="block text-xs font-semibold text-white mb-2 uppercase tracking-wider">
+              <label
+                htmlFor="email"
+                className="mb-2 block text-xs font-semibold uppercase tracking-wider text-card-foreground"
+              >
                 Email
               </label>
-              <div className="relative group">
-                <Mail className="absolute left-3 top-3 w-4 h-4 text-gray-500" />
+
+              <div className="group relative">
+                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+
                 <input
+                  id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="admin@company.com"
-                  className="w-full pl-10 pr-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-1 focus:ring-white focus:border-transparent transition"
+                  autoComplete="username"
+                  className="w-full rounded-lg border border-input bg-background py-2 pl-10 pr-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring"
                   required
                 />
               </div>
@@ -63,17 +81,24 @@ export default function LoginPage() {
 
             {/* Password Field */}
             <div>
-              <label className="block text-xs font-semibold text-white mb-2 uppercase tracking-wider">
+              <label
+                htmlFor="password"
+                className="mb-2 block text-xs font-semibold uppercase tracking-wider text-card-foreground"
+              >
                 Password
               </label>
-              <div className="relative group">
-                <Lock className="absolute left-3 top-3 w-4 h-4 text-gray-500" />
+
+              <div className="group relative">
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+
                 <input
+                  id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter password"
-                  className="w-full pl-10 pr-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-1 focus:ring-white focus:border-transparent transition"
+                  autoComplete="current-password"
+                  className="w-full rounded-lg border border-input bg-background py-2 pl-10 pr-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring"
                   required
                 />
               </div>
@@ -81,9 +106,15 @@ export default function LoginPage() {
 
             {/* Error Message */}
             {error && (
-              <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
-                <p className="text-xs text-red-400">{error}</p>
+              <div
+                role="alert"
+                className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-500/20 dark:bg-red-500/10"
+              >
+                <AlertCircle className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
+
+                <p className="text-xs text-red-700 dark:text-red-400">
+                  {error}
+                </p>
               </div>
             )}
 
@@ -91,11 +122,11 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-2 px-3 bg-white text-black rounded-lg font-semibold text-sm hover:bg-gray-100 disabled:opacity-50 transition flex items-center justify-center gap-2"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isLoading ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" />
                   Signing in...
                 </>
               ) : (
@@ -105,9 +136,9 @@ export default function LoginPage() {
           </form>
 
           {/* Demo Credentials */}
-          <div className="mt-4 p-3 bg-gray-800/30 border border-white/10 rounded-lg">
-            <p className="text-xs text-gray-400 leading-relaxed">
-              <span className="font-semibold text-white text-xs">Demo:</span>{" "}
+          <div className="mt-4 rounded-lg border border-border bg-muted/50 p-3">
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              <span className="font-semibold text-foreground">Demo:</span>{" "}
               admin@company.com / admin123
             </p>
           </div>

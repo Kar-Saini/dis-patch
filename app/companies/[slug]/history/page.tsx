@@ -9,12 +9,10 @@ import {
   Clock,
   Mail,
   CalendarDays,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
-import { format, parse } from "date-fns";
-import { Prisma } from "@prisma/client";
-import { getEmailHistory } from "@/app/action/getHistory";
+import type { Prisma } from "@prisma/client";
+import { getEmailHistoryByCompany } from "@/app/action/employee/getEmailHistoryByCompany";
+import { useParams } from "next/navigation";
 
 type EmailHistoryItem = Prisma.PayslipLogGetPayload<{
   include: {
@@ -48,8 +46,6 @@ export default function HistoryPage() {
   const now = new Date();
 
   const [emails, setEmails] = useState<EmailHistoryItem[]>([]);
-
-  // Default to current month/year
   const [month, setMonth] = useState(now.getMonth());
   const [year, setYear] = useState(now.getFullYear());
 
@@ -58,10 +54,12 @@ export default function HistoryPage() {
   /* ---------------------------------------------------------------------- */
   /* Load history                                                            */
   /* ---------------------------------------------------------------------- */
+  const params = useParams<{ slug: string }>();
+  const slug = params.slug;
 
   useEffect(() => {
     (async () => {
-      const res = await getEmailHistory();
+      const res = await getEmailHistoryByCompany(slug);
 
       if (typeof res === "string") return;
 
@@ -75,7 +73,6 @@ export default function HistoryPage() {
 
   const years = useMemo(() => {
     const currentYear = new Date().getFullYear();
-
     const emailYears = emails.map((email) => email.year);
 
     return [...new Set([currentYear, ...emailYears])].sort((a, b) => b - a);
@@ -92,7 +89,7 @@ export default function HistoryPage() {
   }, [emails, month, year]);
 
   /* ---------------------------------------------------------------------- */
-  /* Stats                                                                   */
+  /* Statistics                                                              */
   /* ---------------------------------------------------------------------- */
 
   const sentCount = filteredEmails.filter(
@@ -101,10 +98,6 @@ export default function HistoryPage() {
 
   const failedCount = filteredEmails.filter(
     (email) => email.status === "FAILED",
-  ).length;
-
-  const pendingCount = filteredEmails.filter(
-    (email) => email.status !== "SENT" && email.status !== "FAILED",
   ).length;
 
   /* ---------------------------------------------------------------------- */
@@ -122,15 +115,17 @@ export default function HistoryPage() {
   }, [month, year, filteredEmails.length, selectedMonthLabel]);
 
   const toggleMonth = (monthLabel: string) => {
-    const expanded = new Set(expandedMonths);
+    setExpandedMonths((prev) => {
+      const next = new Set(prev);
 
-    if (expanded.has(monthLabel)) {
-      expanded.delete(monthLabel);
-    } else {
-      expanded.add(monthLabel);
-    }
+      if (next.has(monthLabel)) {
+        next.delete(monthLabel);
+      } else {
+        next.add(monthLabel);
+      }
 
-    setExpandedMonths(expanded);
+      return next;
+    });
   };
 
   /* ---------------------------------------------------------------------- */
@@ -145,29 +140,29 @@ export default function HistoryPage() {
   };
 
   return (
-    <div className="w-full space-y-8">
+    <div className="w-full space-y-8 text-foreground">
       {/* ------------------------------------------------------------------ */}
       {/* Header                                                             */}
       {/* ------------------------------------------------------------------ */}
 
       <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/25">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
             Payslip
           </p>
 
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white">
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
             Email History
           </h1>
 
-          <p className="mt-1.5 text-sm text-white/35">
+          <p className="mt-1.5 text-sm text-muted-foreground">
             Track salary slip emails and delivery status
           </p>
         </div>
 
         {/* Month / Year filter */}
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <div className="flex items-center gap-2 text-xs text-white/30">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <CalendarDays className="h-3.5 w-3.5" />
             <span>Showing</span>
           </div>
@@ -177,20 +172,20 @@ export default function HistoryPage() {
             <select
               value={month}
               onChange={(e) => setMonth(Number(e.target.value))}
-              className="h-9 appearance-none rounded-lg border border-white/[0.09] bg-white/[0.035] pl-3 pr-8 text-xs font-medium text-white outline-none transition hover:border-white/[0.16] focus:border-white/20"
+              className="h-9 appearance-none rounded-lg border border-input bg-card pl-3 pr-8 text-xs font-medium text-card-foreground outline-none transition hover:border-ring focus:border-ring focus:ring-1 focus:ring-ring"
             >
               {MONTHS.map((name, index) => (
                 <option
                   key={name}
                   value={index}
-                  className="bg-[#0a0a0a] text-white"
+                  className="bg-background text-foreground"
                 >
                   {name}
                 </option>
               ))}
             </select>
 
-            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/30" />
+            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           </div>
 
           {/* Year */}
@@ -198,73 +193,75 @@ export default function HistoryPage() {
             <select
               value={year}
               onChange={(e) => setYear(Number(e.target.value))}
-              className="h-9 appearance-none rounded-lg border border-white/[0.09] bg-white/[0.035] pl-3 pr-8 text-xs font-medium text-white outline-none transition hover:border-white/[0.16] focus:border-white/20"
+              className="h-9 appearance-none rounded-lg border border-input bg-card pl-3 pr-8 text-xs font-medium text-card-foreground outline-none transition hover:border-ring focus:border-ring focus:ring-1 focus:ring-ring"
             >
               {years.map((value) => (
                 <option
                   key={value}
                   value={value}
-                  className="bg-[#0a0a0a] text-white"
+                  className="bg-background text-foreground"
                 >
                   {value}
                 </option>
               ))}
             </select>
 
-            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/30" />
+            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           </div>
         </div>
       </div>
 
       {/* ------------------------------------------------------------------ */}
-      {/* Stats                                                               */}
+      {/* Statistics                                                         */}
       {/* ------------------------------------------------------------------ */}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {/* Total */}
-        <div className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.06]">
-            <Mail className="h-4 w-4 text-white/50" />
+        <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
+            <Mail className="h-4 w-4 text-muted-foreground" />
           </div>
 
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-white/25">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
               Total emails
             </p>
 
-            <p className="mt-0.5 text-sm font-medium text-white">
+            <p className="mt-0.5 text-sm font-semibold text-card-foreground">
               {filteredEmails.length}
             </p>
           </div>
         </div>
 
         {/* Sent */}
-        <div className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.06]">
-            <CheckCircle2 className="h-4 w-4 text-emerald-400/70" />
+        <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-400/10">
+            <CheckCircle2 className="h-4 w-4 text-emerald-700 dark:text-emerald-400" />
           </div>
 
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-white/25">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
               Sent
             </p>
 
-            <p className="mt-0.5 text-sm font-medium text-white">{sentCount}</p>
+            <p className="mt-0.5 text-sm font-semibold text-card-foreground">
+              {sentCount}
+            </p>
           </div>
         </div>
 
         {/* Failed */}
-        <div className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.06]">
-            <AlertCircle className="h-4 w-4 text-red-400/70" />
+        <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-50 dark:bg-red-400/10">
+            <AlertCircle className="h-4 w-4 text-red-700 dark:text-red-400" />
           </div>
 
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-white/25">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
               Failed
             </p>
 
-            <p className="mt-0.5 text-sm font-medium text-white">
+            <p className="mt-0.5 text-sm font-semibold text-card-foreground">
               {failedCount}
             </p>
           </div>
@@ -278,39 +275,40 @@ export default function HistoryPage() {
       <section className="w-full">
         <div className="mb-3 flex items-end justify-between">
           <div>
-            <h2 className="text-sm font-medium text-white">
+            <h2 className="text-sm font-semibold text-foreground">
               {selectedMonthLabel}
             </h2>
 
-            <p className="mt-0.5 text-xs text-white/30">
+            <p className="mt-0.5 text-xs text-muted-foreground">
               Salary slip dispatch history
             </p>
           </div>
 
-          <span className="text-xs text-white/25">
+          <span className="text-xs text-muted-foreground">
             {filteredEmails.length}{" "}
             {filteredEmails.length === 1 ? "email" : "emails"}
           </span>
         </div>
 
         {filteredEmails.length > 0 ? (
-          <div className="w-full overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.02]">
+          <div className="w-full overflow-hidden rounded-xl border border-border bg-card">
             {/* Month header */}
             <button
+              type="button"
               onClick={() => toggleMonth(selectedMonthLabel)}
-              className="flex w-full items-center justify-between border-b border-white/[0.07] px-4 py-3.5 text-left transition hover:bg-white/[0.035]"
+              className="flex w-full items-center justify-between border-b border-border px-4 py-3.5 text-left transition hover:bg-accent"
             >
               <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.06]">
-                  <Mail className="h-4 w-4 text-white/50" />
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
                 </div>
 
                 <div>
-                  <h3 className="text-xs font-medium text-white">
+                  <h3 className="text-xs font-semibold text-card-foreground">
                     {selectedMonthLabel}
                   </h3>
 
-                  <p className="mt-0.5 text-[10px] text-white/30">
+                  <p className="mt-0.5 text-[10px] text-muted-foreground">
                     {filteredEmails.length}{" "}
                     {filteredEmails.length === 1 ? "email" : "emails"}
                   </p>
@@ -318,9 +316,9 @@ export default function HistoryPage() {
               </div>
 
               {expandedMonths.has(selectedMonthLabel) ? (
-                <ChevronUp className="h-4 w-4 text-white/30" />
+                <ChevronUp className="h-4 w-4 text-muted-foreground" />
               ) : (
-                <ChevronDown className="h-4 w-4 text-white/30" />
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
               )}
             </button>
 
@@ -330,9 +328,9 @@ export default function HistoryPage() {
                 {filteredEmails.map((message, index) => (
                   <div
                     key={message.id}
-                    className={`px-4 py-4 transition hover:bg-white/[0.02] ${
+                    className={`px-4 py-4 transition hover:bg-accent/50 ${
                       index !== filteredEmails.length - 1
-                        ? "border-b border-white/[0.06]"
+                        ? "border-b border-border"
                         : ""
                     }`}
                   >
@@ -341,30 +339,31 @@ export default function HistoryPage() {
                         {/* Status icon */}
                         <div className="mt-0.5 shrink-0">
                           {message.status === "SENT" ? (
-                            <CheckCircle2 className="h-4 w-4 text-emerald-400/80" />
+                            <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                           ) : message.status === "FAILED" ? (
-                            <AlertCircle className="h-4 w-4 text-red-400/80" />
+                            <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
                           ) : (
-                            <Clock className="h-4 w-4 text-amber-400/80" />
+                            <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                           )}
                         </div>
 
+                        {/* Employee details */}
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                            <h4 className="text-sm font-medium text-white">
+                            <h4 className="text-sm font-medium text-card-foreground">
                               {message.employee.name}
                             </h4>
 
-                            <span className="text-xs text-white/25">
+                            <span className="text-xs text-muted-foreground">
                               {message.employee.designation}
                             </span>
                           </div>
 
-                          <p className="mt-0.5 truncate text-xs text-white/35">
+                          <p className="mt-0.5 truncate text-xs text-muted-foreground">
                             {message.employee.email}
                           </p>
 
-                          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-white/25">
+                          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-muted-foreground">
                             <span>
                               {new Date(message.createdAt).toLocaleString()}
                             </span>
@@ -378,14 +377,14 @@ export default function HistoryPage() {
                         </div>
                       </div>
 
-                      {/* Status */}
+                      {/* Status badge */}
                       <span
-                        className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-medium ${
+                        className={`shrink-0 rounded-full border px-2.5 py-1 text-[9px] font-semibold ${
                           message.status === "SENT"
-                            ? "bg-emerald-400/10 text-emerald-400"
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-400"
                             : message.status === "FAILED"
-                              ? "bg-red-400/10 text-red-400"
-                              : "bg-amber-400/10 text-amber-400"
+                              ? "border-red-200 bg-red-50 text-red-700 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-400"
+                              : "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-400"
                         }`}
                       >
                         {message.status}
@@ -397,15 +396,18 @@ export default function HistoryPage() {
             )}
           </div>
         ) : (
-          <div className="flex min-h-52 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.02]">
+          /* Empty state */
+          <div className="flex min-h-52 items-center justify-center rounded-xl border border-border bg-card">
             <div className="text-center">
-              <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.04]">
-                <Mail className="h-4 w-4 text-white/20" />
+              <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-muted">
+                <Mail className="h-5 w-5 text-muted-foreground" />
               </div>
 
-              <p className="mt-3 text-sm text-white/35">No email history</p>
+              <p className="mt-3 text-sm font-medium text-foreground">
+                No email history
+              </p>
 
-              <p className="mt-1 text-xs text-white/20">
+              <p className="mt-1 text-xs text-muted-foreground">
                 No salary slip emails were sent in {selectedMonthLabel}.
               </p>
             </div>

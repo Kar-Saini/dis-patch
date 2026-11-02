@@ -3,7 +3,7 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import type { InputHTMLAttributes } from "react";
 import { X } from "lucide-react";
-import addEmployee from "@/app/action/addEmployee";
+import addEmployee from "@/app/action/employee/addEmployee";
 
 interface EmployeeFormProps {
   isOpen: boolean;
