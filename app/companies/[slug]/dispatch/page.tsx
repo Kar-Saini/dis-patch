@@ -528,6 +528,7 @@ export default function DispatchPage() {
         offDays,
         leaveDays,
       });
+      console.log(res);
 
       if (!res.success) {
         setSentMessage("Failed to send salary slips.");
