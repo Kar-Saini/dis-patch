@@ -5,8 +5,8 @@ import { EmailStatus } from "@prisma/client";
 import type { Employee, Company } from "@prisma/client";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import puppeteer from "puppeteer";
-
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
 import { SALARY_CONSTANTS } from "./salaryConstants";
 import { getCompanyBySlug } from "@/app/action/company/getCompanyBySlug";
 import prisma from "@/utils";
@@ -459,9 +459,39 @@ async function generatePdf(html: string): Promise<Buffer> {
 
   let browser;
 
+  const isVercel = process.env.VERCEL === "1";
+
   try {
+    chromium.setGraphicsMode = false;
+
+    // Use serverless Chromium on Vercel.
+    // Use locally installed Chrome on your development machine.
+    const executablePath = isVercel
+      ? await chromium.executablePath()
+      : process.env.CHROME_EXECUTABLE_PATH;
+
+    if (!executablePath) {
+      throw new Error(
+        "Chrome executable not found. Set CHROME_EXECUTABLE_PATH locally.",
+      );
+    }
+
+    const args = isVercel
+      ? await puppeteer.defaultArgs({
+          args: chromium.args,
+          headless: "shell",
+        })
+      : [];
+
     browser = await puppeteer.launch({
-      headless: true,
+      args,
+      executablePath,
+      headless: isVercel ? "shell" : true,
+      defaultViewport: {
+        width: 1100,
+        height: 1400,
+        deviceScaleFactor: 1,
+      },
     });
 
     const page = await browser.newPage();
@@ -483,18 +513,12 @@ async function generatePdf(html: string): Promise<Buffer> {
       });
     });
 
-    await page.setViewport({
-      width: 1100,
-      height: 1400,
-      deviceScaleFactor: 1,
-    });
-
     await page.setContent(html, {
       waitUntil: "load",
       timeout: 30000,
     });
 
-    // Wait for images to finish loading before generating the PDF.
+    // Wait for all images to load.
     const imageResults = await page.evaluate(async () => {
       const images = Array.from(document.images);
 
