@@ -502,7 +502,7 @@ async function generatePdf(html: string): Promise<Buffer> {
       }
     });
 
-    page.on("pageerror", (error) => {
+    page.on("pageerror", (error: any) => {
       console.error("[PDF Browser Error]", error.message);
     });
 
