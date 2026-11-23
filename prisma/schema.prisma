@@ -6,123 +6,227 @@ datasource db {
   provider = "postgresql"
 }
 
-// ==========================================
-// COMPANY
-// ==========================================
-
 model Company {
-  id        String   @id @default(cuid())
-  name      String
-  slug      String   @unique
-
-  logoUrl   String?
-  bannerUrl String?
+  id                String  @id @default(cuid())
+  name              String
+  slug              String  @unique
+  registeredAddress String?
+  employerTan       String?
+  bannerUrl         String?
+  currency          String  @default("INR")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
   employees   Employee[]
+  payrolls    Payroll[]
   payslipLogs PayslipLog[]
 
   @@index([name])
 }
 
-// ==========================================
-// EMPLOYEE
-// ==========================================
-
 model Employee {
-  id             String   @id @unique @default(cuid())
+  id          String  @id @default(cuid())
+  name        String
+  employee_id String?
+  email       String
+  designation String
+  phone_num   String
 
-  // Employee Information
-  name           String
-  employee_id    String?  @unique
-  email          String
-  designation    String
-  email_verified Boolean  @default(false)
-  phone_num      String
+  date_of_birth DateTime? @db.Date
+  nationality   String?
+  address       String?
 
-  date_of_joining DateTime? @db.Date
-
-  // Personal & Identification Details
   passport_no          String?
-  date_of_birth        DateTime? @db.Date
-  nationality          String?
   visa_no              String?
   frro_reg_no          String?
   tax_residency_status String?
   iw_ssa_status        String?
 
-  // Bank & Tax Details
-  bank         String
-  bank_acc_num String
-  bank_ifsc    String
-  pan_num      String
-  employer_tan String?
+  pan_num      String?
+  bank_acc_num String?
+  bank         String?
+  bank_ifsc    String?
 
-  // Company Reference
-  // Optional temporarily for migration of existing employees.
-  companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  customPayroll Boolean @default(false)
+  payrollId     String
 
-  // Timestamps
+  payroll Payroll @relation("EmployeeAssignedPayroll", fields: [payrollId], references: [id], onDelete: Restrict)
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
 
-  // Relations
   payslips PayslipLog[]
 
-  // Email must be unique within a company, not globally.
-  @@unique([companyId, email])
+  @@unique([companyId, employee_id])
+  @@index([companyId, email])
+  @@index([companyId, payrollId])
+  @@index([passport_no])
+}
+
+model Payroll {
+  id   String @id @default(cuid())
+  name String
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  isDefault Boolean @default(false)
+
+  components PayrollComponent[]
+  employees  Employee[]         @relation("EmployeeAssignedPayroll")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   @@index([companyId])
+  @@index([companyId, isDefault])
 }
 
-// ==========================================
-// ADMIN
-// ==========================================
+model PayrollComponent {
+  id String @id @default(cuid())
+
+  payrollId String
+  payroll   Payroll @relation(fields: [payrollId], references: [id], onDelete: Cascade)
+
+  code      String
+  name      String
+  type      PayrollComponentType
+  mode      PayrollCalculationMode
+  value     Decimal                @db.Decimal(14, 4)
+  isEnabled Boolean                @default(true)
+  sortOrder Int                    @default(0)
+  notes     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([payrollId, code])
+  @@index([payrollId, type])
+  @@index([payrollId, isEnabled])
+}
 
 model Admin {
-  id         String   @id @default(cuid())
-  name       String
-  password   String
-  email      String   @unique
-  created_at DateTime @default(now())
+  id           String   @id @default(cuid())
+  name         String
+  passwordHash String
+  email        String   @unique
+  created_at   DateTime @default(now())
 }
-
-// ==========================================
-// VISA PERSON
-// ==========================================
 
 model VisaPerson {
-  id           String    @id @default(cuid())
-  name         String
-  passport_num String
-  nationality  String
-  entry_date   DateTime  @db.Date
-  exit_date    DateTime? @db.Date
-  created_at   DateTime  @default(now())
-  updated_at   DateTime  @default(now()) @updatedAt
+  id         String    @id @default(cuid())
+  name       String
+  entry_date DateTime  @db.Date
+  exit_date  DateTime? @db.Date
+
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
 
   logs VisaLog[]
-
-  @@index([passport_num])
-  @@index([entry_date])
 }
 
-// ==========================================
-// VISA LOG
-// ==========================================
-
 model VisaLog {
-  id           String     @id @default(cuid())
-  visaPersonId String
-  visaPerson   VisaPerson @relation(fields: [visaPersonId], references: [id])
-  action       VisaAction
-  note         String?
-  createdAt    DateTime   @default(now())
+  id       String     @id @default(cuid())
+  personId String
+  person   VisaPerson @relation(fields: [personId], references: [id], onDelete: Cascade)
 
-  @@index([visaPersonId])
+  action     VisaAction
+  entry_date DateTime?  @db.Date
+  exit_date  DateTime?  @db.Date
+  notes      String?
+
+  created_at DateTime @default(now())
+
+  @@index([personId])
+  @@index([created_at])
+}
+
+model PayslipLog {
+  id String @id @default(cuid())
+
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
+  month  Int
+  year   Int
+  payDate DateTime? @db.Date
+
+  workingDays Decimal? @db.Decimal(7, 2)
+  offDays     Decimal? @db.Decimal(7, 2)
+  leaveDays   Decimal? @db.Decimal(7, 2)
+  paidDays    Decimal? @db.Decimal(7, 2)
+  lopDays     Decimal? @db.Decimal(7, 2)
+
+  currency        String   @default("INR")
+  grossEarnings   Decimal? @db.Decimal(14, 2)
+  totalDeductions Decimal? @db.Decimal(14, 2)
+  netPay          Decimal? @db.Decimal(14, 2)
+
+  payslipData Json?
+
+  templateVersion String?
+
+  recipientEmail String?
+  status         EmailStatus @default(PENDING)
+  messageId      String?
+  failureReason  String?
+  sentAt         DateTime?
+
+  createdAt DateTime @default(now())
+
+  adjustments PayslipAdjustment[]
+
+  @@index([employeeId])
+  @@index([employeeId, year, month])
+  @@index([companyId])
+  @@index([companyId, year, month])
+  @@index([status, createdAt])
+}
+
+model PayslipAdjustment {
+  id String @id @default(cuid())
+
+  payslipLogId String
+  payslipLog   PayslipLog @relation(fields: [payslipLogId], references: [id], onDelete: Cascade)
+
+  type        PayslipAdjustmentType
+  code        String?
+  description String
+  amount      Decimal @db.Decimal(14, 2)
+
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([payslipLogId])
+}
+
+enum PayrollComponentType {
+  EARNING
+  DEDUCTION
+}
+
+enum PayrollCalculationMode {
+  FIXED_AMOUNT
+  PERCENT_OF_BASIC
+}
+
+enum PayslipAdjustmentType {
+  EARNING
+  DEDUCTION
+}
+
+enum EmailStatus {
+  PENDING
+  SENT
+  FAILED
 }
 
 enum VisaAction {
@@ -130,40 +234,4 @@ enum VisaAction {
   ENTRY
   EXIT
   UPDATED
-}
-
-// ==========================================
-// PAYSLIP HISTORY
-// ==========================================
-
-model PayslipLog {
-  id         String      @id @default(cuid())
-
-  employeeId String
-  employee   Employee    @relation(fields: [employeeId], references: [id])
-
-  // Company Reference
-  // Optional temporarily for migration of existing history.
-  companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
-
-  month     Int
-  year      Int
-  status    EmailStatus @default(PENDING)
-  messageId String?
-  createdAt DateTime    @default(now())
-
-  @@index([employeeId])
-  @@index([companyId])
-  @@index([companyId, year, month])
-}
-
-// ==========================================
-// ENUMS
-// ==========================================
-
-enum EmailStatus {
-  PENDING
-  SENT
-  FAILED
 }

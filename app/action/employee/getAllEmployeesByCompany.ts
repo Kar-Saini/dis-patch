@@ -1,43 +1,54 @@
 "use server";
 
 import prisma from "@/utils";
-import { Employee } from "@prisma/client";
+
+export interface EmployeeListItem {
+  id: string;
+  name: string;
+  employee_id: string | null;
+  designation: string;
+  email: string;
+}
 
 export default async function getAllEmployeesByCompany(
   companySlug: string,
-): Promise<Employee[]> {
-  if (!companySlug) {
-    throw new Error("Company slug is required");
+): Promise<EmployeeListItem[]> {
+  if (typeof companySlug !== "string" || !companySlug.trim()) {
+    throw new Error("Company slug is required.");
   }
+
+  const slug = companySlug.trim();
+
+  let company;
 
   try {
-    // Find the company using its URL slug
-    const company = await prisma.company.findUnique({
+    company = await prisma.company.findUnique({
       where: {
-        slug: companySlug,
+        slug,
       },
       select: {
-        id: true,
+        employees: {
+          orderBy: {
+            name: "asc",
+          },
+          select: {
+            id: true,
+            name: true,
+            employee_id: true,
+            designation: true,
+            email: true,
+          },
+        },
       },
     });
-
-    if (!company) {
-      throw new Error("Company not found");
-    }
-
-    // Fetch only employees belonging to this company
-    const employees = await prisma.employee.findMany({
-      where: {
-        companyId: company.id,
-      },
-      orderBy: {
-        name: "asc",
-      },
-    });
-
-    return employees;
   } catch (error) {
     console.error("Error fetching employees:", error);
-    throw error;
+    throw new Error("Unable to fetch employees.");
   }
+
+  if (!company) {
+    throw new Error("Company not found.");
+  }
+
+  return company.employees;
 }

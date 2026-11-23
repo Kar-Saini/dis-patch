@@ -13,7 +13,9 @@ export function ThemeToggle() {
   }, []);
 
   if (!mounted) {
-    return <div className="h-10 w-full animate-pulse rounded-xl bg-muted/50" />;
+    return (
+      <div className="fixed right-5 top-5 z-[100] h-10 w-10 rounded-full border border-border bg-card/90" />
+    );
   }
 
   const isDark = theme === "dark";
@@ -24,26 +26,23 @@ export function ThemeToggle() {
       onClick={() => setTheme(isDark ? "light" : "dark")}
       aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
       aria-pressed={isDark}
+      title={`Switch to ${isDark ? "light" : "dark"} mode`}
       className="
-        group flex w-full items-center gap-3
-        rounded-xl border border-border
-        bg-card px-3 py-2.5
-        text-card-foreground
-        transition-colors duration-200
-        hover:cursor-pointer
+        fixed right-5 top-5 z-[100]
+        flex h-10 w-10 items-center justify-center
+        rounded-full border border-border
+        bg-card/90 text-foreground
+        shadow-md backdrop-blur-xl
+        transition-all duration-200
+        hover:scale-105 hover:bg-muted
+        active:scale-95
       "
     >
-      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
-        {isDark ? (
-          <Sun className="h-4 w-4 text-foreground" />
-        ) : (
-          <Moon className="h-4 w-4 text-foreground" />
-        )}
-      </span>
-
-      <span className="flex-1 text-left text-xs font-medium">
-        {isDark ? "Light Mode" : "Dark Mode"}
-      </span>
+      {isDark ? (
+        <Sun className="h-[18px] w-[18px]" />
+      ) : (
+        <Moon className="h-[18px] w-[18px]" />
+      )}
     </button>
   );
 }

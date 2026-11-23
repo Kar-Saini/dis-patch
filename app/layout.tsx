@@ -1,7 +1,10 @@
 import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+
 import { AuthProvider } from "@/lib/authContext";
+import { ThemeToggle } from "@/components/ThemeToggle";
+
 import { Anta } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 
@@ -45,11 +48,14 @@ export default function RootLayout({
       >
         <ThemeProvider
           attribute="class"
-          defaultTheme="dark"
+          defaultTheme="light"
           enableSystem={false}
           disableTransitionOnChange
         >
           <AuthProvider>{children}</AuthProvider>
+
+          {/* Global Theme Toggle */}
+          <ThemeToggle />
         </ThemeProvider>
 
         {process.env.NODE_ENV === "production" && <Analytics />}

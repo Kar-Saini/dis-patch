@@ -1,31 +1,31 @@
 import prisma from "./utils";
 
 // ==========================================
-// COMPANIES
+// COMPANIES AND EMPLOYEES
 // ==========================================
 
 const COMPANIES = [
   {
-    name: "Company A",
-    slug: "company-a",
+    name: "FINALTEST 1",
+    slug: "finaltest-1",
     employees: [
       {
-        name: "Aarav Mehta",
-        employee_id: "A001",
+        name: "Kabir Nair",
+        employee_id: "FT1-001",
         email: "kackysaini8@gmail.com",
         designation: "Software Engineer",
-        phone_num: "0000000001",
+        phone_num: "9000000001",
         bank: "Demo Bank",
         bank_acc_num: "000000000001",
         bank_ifsc: "DUMMY000001",
         pan_num: "DEMOA0000A",
       },
       {
-        name: "Priya Shah",
-        employee_id: "A002",
+        name: "Ananya Rao",
+        employee_id: "FT1-002",
         email: "utkarshpatel1812@gmail.com",
         designation: "HR Executive",
-        phone_num: "0000000002",
+        phone_num: "9000000002",
         bank: "Demo Bank",
         bank_acc_num: "000000000002",
         bank_ifsc: "DUMMY000002",
@@ -34,26 +34,26 @@ const COMPANIES = [
     ],
   },
   {
-    name: "Company B",
-    slug: "company-b",
+    name: "FINALTEST 2",
+    slug: "finaltest-2",
     employees: [
       {
-        name: "Rohan Desai",
-        employee_id: "B001",
+        name: "Vihaan Kapoor",
+        employee_id: "FT2-001",
         email: "kackysaini8@gmail.com",
         designation: "Operations Manager",
-        phone_num: "0000000003",
+        phone_num: "9000000003",
         bank: "Demo Bank",
         bank_acc_num: "000000000003",
         bank_ifsc: "DUMMY000003",
         pan_num: "DEMOC0000C",
       },
       {
-        name: "Neha Kulkarni",
-        employee_id: "B002",
+        name: "Isha Menon",
+        employee_id: "FT2-002",
         email: "utkarshpatel1812@gmail.com",
         designation: "Finance Associate",
-        phone_num: "0000000004",
+        phone_num: "9000000004",
         bank: "Demo Bank",
         bank_acc_num: "000000000004",
         bank_ifsc: "DUMMY000004",
@@ -71,6 +71,7 @@ async function seedCompaniesAndEmployees() {
   let totalEmployees = 0;
 
   for (const companyData of COMPANIES) {
+    // Create or update company
     const company = await prisma.company.upsert({
       where: {
         slug: companyData.slug,
@@ -81,22 +82,36 @@ async function seedCompaniesAndEmployees() {
       create: {
         name: companyData.name,
         slug: companyData.slug,
-        logoUrl: null,
         bannerUrl: null,
+        registeredAddress: null,
+        employerTan: null,
+        salaryBasisDays: 22,
       },
     });
 
     console.log(`\nCompany ready: ${company.name}`);
 
+    // Create or update employees
     for (const employeeData of companyData.employees) {
       const employee = await prisma.employee.upsert({
         where: {
-          companyId_email: {
+          companyId_employee_id: {
             companyId: company.id,
-            email: employeeData.email,
+            employee_id: employeeData.employee_id,
           },
         },
-        update: {},
+
+        update: {
+          name: employeeData.name,
+          email: employeeData.email,
+          designation: employeeData.designation,
+          phone_num: employeeData.phone_num,
+          bank: employeeData.bank,
+          bank_acc_num: employeeData.bank_acc_num,
+          bank_ifsc: employeeData.bank_ifsc,
+          pan_num: employeeData.pan_num,
+        },
+
         create: {
           ...employeeData,
           companyId: company.id,
@@ -105,7 +120,7 @@ async function seedCompaniesAndEmployees() {
 
       totalEmployees++;
 
-      console.log(`Employee ready: ${employee.name} (${employee.email})`);
+      console.log(`Employee ready: ${employee.name} (${employee.employee_id})`);
     }
   }
 
@@ -127,7 +142,7 @@ async function main() {
 main()
   .catch((error) => {
     console.error("Seed failed:", error);
-    process.exit(1);
+    process.exitCode = 1;
   })
   .finally(async () => {
     await prisma.$disconnect();

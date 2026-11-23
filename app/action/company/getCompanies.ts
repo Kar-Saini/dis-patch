@@ -1,12 +1,10 @@
 "use server";
-
 import prisma from "@/utils";
 
 export interface CompanyListItem {
   id: string;
   name: string;
   slug: string;
-  logoUrl: string | null;
   bannerUrl: string | null;
   createdAt: string;
   employeeCount: number;
@@ -32,7 +30,6 @@ export async function getCompanies(): Promise<GetCompaniesResult> {
         id: true,
         name: true,
         slug: true,
-        logoUrl: true,
         bannerUrl: true,
         createdAt: true,
 
@@ -48,7 +45,6 @@ export async function getCompanies(): Promise<GetCompaniesResult> {
       id: company.id,
       name: company.name,
       slug: company.slug,
-      logoUrl: company.logoUrl,
       bannerUrl: company.bannerUrl,
       createdAt: company.createdAt.toISOString(),
       employeeCount: company._count.employees,
