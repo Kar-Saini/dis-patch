@@ -16,7 +16,7 @@ import payslipTemplate from "@/template/payslipTemplate";
 
 import puppeteer from "puppeteer-core";
 import type { Browser } from "puppeteer-core";
-import chromium from "@sparticuz/chromium";
+import chromium from "@sparticuz/chromium-min";
 
 import { revalidatePath } from "next/cache";
 
@@ -823,12 +823,14 @@ function fillTemplate(template: string, values: TemplateValues): string {
 // ======================================================
 
 async function launchPdfBrowser(): Promise<Browser> {
+  const CHROMIUM_PACK_URL =
+    "https://github.com/Sparticuz/chromium/releases/download/v149.0.0/chromium-v149.0.0-pack.x64.tar";
   chromium.setGraphicsMode = false;
 
   const isVercel = process.env.VERCEL === "1";
 
   const executablePath = isVercel
-    ? await chromium.executablePath()
+    ? await chromium.executablePath(CHROMIUM_PACK_URL)
     : process.env.CHROME_EXECUTABLE_PATH;
 
   if (!executablePath) {
