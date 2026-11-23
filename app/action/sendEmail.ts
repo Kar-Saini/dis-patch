@@ -12,8 +12,7 @@ import {
   Prisma,
 } from "@prisma/client";
 
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
+import payslipTemplate from "@/template/payslipTemplate";
 
 import puppeteer from "puppeteer-core";
 import type { Browser } from "puppeteer-core";
@@ -160,13 +159,6 @@ const ONE_TIME_COMPONENT_CODES = new Set([
   "PERFORMANCE_BONUS",
   "BASIC_ARREARS",
 ]);
-
-const TEMPLATE_PATHS = [
-  join(process.cwd(), "template", "new_template.html"),
-  join(process.cwd(), "template", "new_tempalte.html"),
-  join(process.cwd(), "public", "new_template.html"),
-  join(process.cwd(), "new_template.html"),
-];
 
 // ======================================================
 // GENERAL HELPERS
@@ -693,25 +685,8 @@ function calculatePayslip(
 // ======================================================
 
 async function readPayslipTemplate(): Promise<string> {
-  for (const filePath of TEMPLATE_PATHS) {
-    try {
-      const template = await readFile(filePath, "utf8");
-
-      console.info("Payslip template loaded:", filePath);
-
-      return template;
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
-        throw error;
-      }
-    }
-  }
-
-  throw new Error(
-    "Payslip template not found. Expected template/new_template.html.",
-  );
+  return payslipTemplate;
 }
-
 // ======================================================
 // BUILD TEMPLATE DATA
 // ======================================================
